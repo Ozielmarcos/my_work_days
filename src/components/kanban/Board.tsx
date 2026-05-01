@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState } from 'react';
 import {
   DndContext,
   DragOverlay,
@@ -7,25 +7,21 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-} from "@dnd-kit/core";
-import type {
-  DragStartEvent,
-  DragOverEvent,
-  DragEndEvent,
-} from "@dnd-kit/core";
-import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
-import { useKanbanStore } from "../../store/useKanbanStore";
-import { Column } from "./Column";
-import { TaskCard } from "../task/TaskCard";
-import { TaskDetailModal } from "../task/TaskDetailModal";
-import type { Task, TaskStatus } from "../../types";
+} from '@dnd-kit/core';
+import type { DragStartEvent, DragOverEvent, DragEndEvent } from '@dnd-kit/core';
+import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
+import { useKanbanStore } from '../../store/useKanbanStore';
+import { Column } from './Column';
+import { TaskCard } from '../task/TaskCard';
+import { TaskDetailModal } from '../task/TaskDetailModal';
+import type { Task, TaskStatus } from '../../types';
 
 const COLUMNS: { id: TaskStatus; title: string }[] = [
-  { id: "todo", title: "Á fazer" },
-  { id: "in_progress", title: "Fazendo" },
-  { id: "review", title: "em Revisão" },
-  { id: "done", title: "Feito" },
-  { id: "blocked", title: "Bloqueado" },
+  { id: 'todo', title: 'Á fazer' },
+  { id: 'in_progress', title: 'Fazendo' },
+  { id: 'review', title: 'em Revisão' },
+  { id: 'done', title: 'Feito' },
+  { id: 'blocked', title: 'Bloqueado' },
 ];
 
 export function Board() {
@@ -48,7 +44,7 @@ export function Board() {
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -66,14 +62,15 @@ export function Board() {
 
     if (activeId === overId) return;
 
-    const isActiveTask = active.data.current?.type === "Task";
-    const isOverTask = over.data.current?.type === "Task";
-    const isOverColumn = over.data.current?.type === "Column";
+    const isActiveTask = active.data.current?.type === 'Task';
+    const isOverTask = over.data.current?.type === 'Task';
+    const isOverColumn = over.data.current?.type === 'Column';
 
     if (!isActiveTask) return;
 
     if (isOverTask) {
       const overTask = filteredTasks.find((t) => t.id === overId);
+
       if (overTask && activeTask?.status !== overTask.status) {
         optimisticMoveTask(activeId as string, overTask.status);
       }
@@ -94,16 +91,17 @@ export function Board() {
     const activeId = active.id as string;
     const overId = over.id as string;
 
-    const isActiveTask = active.data.current?.type === "Task";
+    const isActiveTask = active.data.current?.type === 'Task';
     if (!isActiveTask) return;
 
-    const isOverColumn = over.data.current?.type === "Column";
-    const isOverTask = over.data.current?.type === "Task";
+    const isOverColumn = over.data.current?.type === 'Column';
+    const isOverTask = over.data.current?.type === 'Task';
 
     if (isOverColumn) {
       moveTask(activeId, overId as TaskStatus);
     } else if (isOverTask) {
       const overTask = tasks.find((t) => t.id === overId);
+
       if (overTask) {
         moveTask(activeId, overTask.status);
       }

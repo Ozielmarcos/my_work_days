@@ -4,42 +4,48 @@
 
 @layer base {
   :root {
-    --background: 240 10% 4%;
-    --foreground: 0 0% 98%;
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
 
-    --card: 240 10% 6%;
-    --card-foreground: 0 0% 98%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
 
-    --popover: 240 10% 6%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
 
-    --primary: 292 84% 61%; /* Pink/Magenta */
+    --primary: 217 91% 60%;
+    /* Blue-500 */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 240 4% 16%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
 
-    --muted: 240 4% 16%;
-    --muted-foreground: 240 5% 65%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
 
-    --accent: 292 84% 61%;
+    --accent: 217 91% 60%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 240 4% 16%;
-    --input: 240 4% 16%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
     --ring: 292 84% 61%;
 
     --radius: 0.5rem;
 
     /* Status Colors based on the image */
-    --status-todo: 217 91% 60%;      /* Blue */
-    --status-in-progress: 142 71% 45%; /* Green */
-    --status-review: 262 83% 58%;      /* Purple (Ready in image) */
-    --status-done: 180 100% 25%;       /* Teal/Cyan */
-    --status-blocked: 0 84% 60%;       /* Red */
+    --status-todo: 217 91% 60%;
+    /* Blue */
+    --status-in-progress: 142 71% 45%;
+    /* Green */
+    --status-review: 262 83% 58%;
+    /* Purple (Ready in image) */
+    --status-done: 180 100% 25%;
+    /* Teal/Cyan */
+    --status-blocked: 0 84% 60%;
+    /* Red */
   }
 
   .dark {
@@ -52,7 +58,8 @@
     --popover: 240 10% 6%;
     --popover-foreground: 0 0% 98%;
 
-    --primary: 292 84% 61%;
+    --primary: 217 91% 60%;
+    /* Blue-500 */
     --primary-foreground: 0 0% 100%;
 
     --secondary: 240 4% 16%;
@@ -61,7 +68,7 @@
     --muted: 240 4% 16%;
     --muted-foreground: 240 5% 65%;
 
-    --accent: 292 84% 61%;
+    --accent: 217 91% 60%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 62.8% 30.6%;
@@ -77,6 +84,7 @@
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
   }
@@ -87,13 +95,16 @@
   width: 8px;
   height: 8px;
 }
+
 ::-webkit-scrollbar-track {
   background: hsl(var(--background));
 }
+
 ::-webkit-scrollbar-thumb {
   background: hsl(var(--muted));
   border-radius: 4px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--secondary));
 }

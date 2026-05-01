@@ -1,11 +1,23 @@
-import { useState } from "react";
-import { useKanbanStore } from "../../store/useKanbanStore";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type { TaskPriority, TaskStatus } from "../../types";
+import { useState } from 'react';
+import { useKanbanStore } from '../../store/useKanbanStore';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import type { TaskPriority, TaskStatus } from '../../types';
 
 interface CreateTaskModalProps {
   open: boolean;
@@ -13,14 +25,18 @@ interface CreateTaskModalProps {
   defaultStatus?: TaskStatus;
 }
 
-export function CreateTaskModal({ open, onOpenChange, defaultStatus = "todo" }: CreateTaskModalProps) {
+export function CreateTaskModal({
+  open,
+  onOpenChange,
+  defaultStatus = 'todo',
+}: CreateTaskModalProps) {
   const addTask = useKanbanStore((state) => state.addTask);
   const activeStoryId = useKanbanStore((state) => state.activeStoryId);
-  
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [effort, setEffort] = useState("1");
-  const [priority, setPriority] = useState<TaskPriority>("medium");
+
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [effort, setEffort] = useState('1');
+  const [priority, setPriority] = useState<TaskPriority>('medium');
   const [status, setStatus] = useState<TaskStatus>(defaultStatus);
 
   const handleSubmit = () => {
@@ -33,10 +49,10 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus = "todo" }: 
         priority,
         status,
       });
-      setTitle("");
-      setDescription("");
-      setEffort("1");
-      setPriority("medium");
+      setTitle('');
+      setDescription('');
+      setEffort('1');
+      setPriority('medium');
       onOpenChange(false);
     }
   };
@@ -71,7 +87,10 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus = "todo" }: 
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label>Status</Label>
-              <Select value={status} onValueChange={(val) => setStatus(val as TaskStatus)}>
+              <Select
+                value={status}
+                onValueChange={(val) => setStatus(val as TaskStatus)}
+              >
                 <SelectTrigger className="bg-background/50 border-border">
                   <SelectValue />
                 </SelectTrigger>
@@ -86,7 +105,10 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus = "todo" }: 
             </div>
             <div className="grid gap-2">
               <Label>Priority</Label>
-              <Select value={priority} onValueChange={(val) => setPriority(val as TaskPriority)}>
+              <Select
+                value={priority}
+                onValueChange={(val) => setPriority(val as TaskPriority)}
+              >
                 <SelectTrigger className="bg-background/50 border-border">
                   <SelectValue />
                 </SelectTrigger>
@@ -111,7 +133,11 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus = "todo" }: 
           </div>
         </div>
         <DialogFooter>
-          <Button disabled={!title.trim() || !activeStoryId} onClick={handleSubmit} className="bg-primary hover:bg-primary/90 text-primary-foreground">
+          <Button
+            disabled={!title.trim() || !activeStoryId}
+            onClick={handleSubmit}
+            className="bg-primary hover:bg-primary/90 text-primary-foreground"
+          >
             Create Task
           </Button>
         </DialogFooter>

@@ -1,22 +1,30 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useAuthStore } from "../store/useAuthStore";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../store/useAuthStore';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 
 export default function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
     if (email && password) {
       login(email);
-      navigate("/dashboard");
+      navigate('/dashboard');
     }
   };
 
@@ -58,7 +66,7 @@ export default function Login() {
             </div>
           </CardContent>
           <CardFooter>
-            <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
+            <Button type="submit" className="w-full text-primary-foreground">
               Entrar
             </Button>
           </CardFooter>

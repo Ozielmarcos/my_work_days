@@ -1,106 +1,136 @@
-import { useEffect, useState } from "react";
-import { useKanbanStore } from "../store/useKanbanStore";
-import { useAuthStore } from "../store/useAuthStore";
-import { Board } from "../components/kanban/Board";
-import { StorySelector } from "../components/story/StorySelector";
-import { CreateTaskModal } from "../components/task/CreateTaskModal";
-import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Users, FolderKanban, Library, Contact, LogOut, Bell, Mail, Plus } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useEffect } from 'react';
+import { useKanbanStore } from '../store/useKanbanStore';
 
 export default function Dashboard() {
   const fetchInitialData = useKanbanStore((state) => state.fetchInitialData);
   const isLoading = useKanbanStore((state) => state.isLoading);
-  const user = useAuthStore((state) => state.user);
-  const logout = useAuthStore((state) => state.logout);
-  const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
+  const stories = useKanbanStore((state) => state.stories);
+  const tasks = useKanbanStore((state) => state.tasks);
 
   useEffect(() => {
     fetchInitialData();
   }, [fetchInitialData]);
 
   if (isLoading) {
-    return <div className="flex h-screen items-center justify-center bg-background text-foreground">Carregando workspace...</div>;
+    return (
+      <div className="flex h-full items-center justify-center bg-background text-foreground">
+        Carregando workspace...
+      </div>
+    );
   }
 
+  // Calculate stats
+  const totalProjects = stories.length;
+  const mockTotalUsers = 12;
+
+  // Metrics by project
+  const projectMetrics = stories.map((story) => {
+    const storyTasks = tasks.filter((t) => t.storyId === story.id);
+    const totalCards = storyTasks.length;
+    const cardsByStatus = {
+      todo: storyTasks.filter((t) => t.status === 'todo').length,
+      in_progress: storyTasks.filter((t) => t.status === 'in_progress').length,
+      review: storyTasks.filter((t) => t.status === 'review').length,
+      done: storyTasks.filter((t) => t.status === 'done').length,
+      blocked: storyTasks.filter((t) => t.status === 'blocked').length,
+    };
+    const totalHours = storyTasks.reduce((sum, task) => sum + (task.effort || 0), 0);
+
+    return {
+      ...story,
+      totalCards,
+      cardsByStatus,
+      totalHours,
+    };
+  });
+
   return (
-    <div className="flex h-screen w-full bg-background overflow-hidden text-foreground">
-      {/* Sidebar - Matching Image Aesthetic */}
-      <aside className="w-[70px] shrink-0 border-r border-border bg-[#0A0A0A] flex flex-col items-center py-6 gap-6 z-10">
-        <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center text-primary font-bold text-sm tracking-tighter leading-none mb-4">
-          MWD
+    <div className="flex-1 overflow-y-auto p-8 flex flex-col gap-8">
+      {/* Overview Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="bg-card border border-border rounded-xl p-6 flex flex-col gap-2">
+          <span className="text-muted-foreground text-sm font-medium">
+            Total de Projetos
+          </span>
+          <span className="text-3xl font-bold text-foreground">{totalProjects}</span>
         </div>
-        
-        <Avatar className="w-10 h-10 border border-border">
-          <AvatarImage src={user?.avatarUrl} />
-          <AvatarFallback>{user?.name.charAt(0).toUpperCase()}</AvatarFallback>
-        </Avatar>
-
-        <nav className="flex flex-col gap-4 mt-4 w-full px-3">
-          <div className="p-3 rounded-xl hover:bg-white/5 cursor-pointer text-muted-foreground flex justify-center transition-colors">
-            <LayoutDashboard className="w-5 h-5" />
-          </div>
-          <div className="p-3 rounded-xl bg-primary/20 text-primary cursor-pointer flex justify-center transition-colors">
-            <FolderKanban className="w-5 h-5" />
-          </div>
-          <div className="p-3 rounded-xl hover:bg-white/5 cursor-pointer text-muted-foreground flex justify-center transition-colors">
-            <Users className="w-5 h-5" />
-          </div>
-          <div className="p-3 rounded-xl hover:bg-white/5 cursor-pointer text-muted-foreground flex justify-center transition-colors">
-            <Library className="w-5 h-5" />
-          </div>
-          <div className="p-3 rounded-xl hover:bg-white/5 cursor-pointer text-muted-foreground flex justify-center transition-colors">
-            <Contact className="w-5 h-5" />
-          </div>
-        </nav>
-
-        <div className="mt-auto p-3 rounded-xl hover:bg-white/5 cursor-pointer text-muted-foreground flex justify-center transition-colors" onClick={logout}>
-          <LogOut className="w-5 h-5" />
+        <div className="bg-card border border-border rounded-xl p-6 flex flex-col gap-2">
+          <span className="text-muted-foreground text-sm font-medium">
+            Total de Usuários
+          </span>
+          <span className="text-3xl font-bold text-foreground">{mockTotalUsers}</span>
         </div>
-      </aside>
+        <div className="bg-card border border-border rounded-xl p-6 flex flex-col gap-2">
+          <span className="text-muted-foreground text-sm font-medium">
+            Total de Tarefas
+          </span>
+          <span className="text-3xl font-bold text-foreground">{tasks.length}</span>
+        </div>
+        <div className="bg-card border border-border rounded-xl p-6 flex flex-col gap-2">
+          <span className="text-muted-foreground text-sm font-medium">Horas Totais</span>
+          <span className="text-3xl font-bold text-foreground">
+            {tasks.reduce((sum, t) => sum + (t.effort || 0), 0)}h
+          </span>
+        </div>
+      </div>
 
-      {/* Main Content Area */}
-      <main className="flex-1 flex flex-col min-w-0 bg-background overflow-hidden">
-        {/* Top Navbar */}
-        <header className="h-[70px] border-b border-border bg-card/40 backdrop-blur-md flex items-center justify-between px-8 shrink-0">
-          <div className="flex gap-8 text-sm font-medium">
-            <span className="text-muted-foreground hover:text-foreground cursor-pointer transition-colors">Dashboard</span>
-            <span className="text-primary cursor-pointer">Projetos</span>
-          </div>
-          <div className="flex items-center gap-6 text-muted-foreground">
-            <Mail className="w-5 h-5 cursor-pointer hover:text-foreground transition-colors" />
-            <Bell className="w-5 h-5 cursor-pointer hover:text-foreground transition-colors" />
-            <Button variant="outline" size="sm" className="bg-transparent border-border hover:bg-accent hover:text-accent-foreground text-xs rounded-full px-4 h-8">
-              Configurações <span className="ml-1 text-[10px]">›</span>
-            </Button>
-          </div>
-        </header>
+      {/* Project Breakdown */}
+      <div>
+        <h2 className="text-xl font-semibold mb-4 text-foreground">
+          Métricas por Projeto
+        </h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {projectMetrics.map((project) => (
+            <div
+              key={project.id}
+              className="bg-card border border-border rounded-xl p-6 flex flex-col gap-4"
+            >
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="text-lg font-medium text-foreground">{project.title}</h3>
+                  <p className="text-sm text-muted-foreground mt-1 line-clamp-1">
+                    {project.description}
+                  </p>
+                </div>
+                <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap ml-4">
+                  {project.totalHours}h Totais
+                </div>
+              </div>
 
-        {/* Board Header & Controls */}
-        <div className="px-8 py-6 flex flex-col gap-6 shrink-0">
-          <div className="flex items-center text-sm text-muted-foreground">
-            Projetos <span className="mx-2">›</span> 
-            <StorySelector />
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-semibold tracking-tight text-foreground">Kanban Board</h1>
-            <div className="flex items-center gap-4">
-              <Button onClick={() => setIsCreateTaskOpen(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-lg px-6">
-                <Plus className="w-4 h-4 mr-2" />
-                Criar Tarefa
-              </Button>
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-2">
+                <div className="flex flex-col items-center p-2 bg-background rounded-lg border border-border">
+                  <span className="text-xs text-muted-foreground mb-1">To Do</span>
+                  <span className="font-bold">{project.cardsByStatus.todo}</span>
+                </div>
+                <div className="flex flex-col items-center p-2 bg-background rounded-lg border border-border">
+                  <span className="text-xs text-muted-foreground mb-1">In Prog</span>
+                  <span className="font-bold text-blue-500">
+                    {project.cardsByStatus.in_progress}
+                  </span>
+                </div>
+                <div className="flex flex-col items-center p-2 bg-background rounded-lg border border-border">
+                  <span className="text-xs text-muted-foreground mb-1">Review</span>
+                  <span className="font-bold text-yellow-500">
+                    {project.cardsByStatus.review}
+                  </span>
+                </div>
+                <div className="flex flex-col items-center p-2 bg-background rounded-lg border border-border">
+                  <span className="text-xs text-muted-foreground mb-1">Done</span>
+                  <span className="font-bold text-green-500">
+                    {project.cardsByStatus.done}
+                  </span>
+                </div>
+                <div className="flex flex-col items-center p-2 bg-background rounded-lg border border-border">
+                  <span className="text-xs text-muted-foreground mb-1">Blocked</span>
+                  <span className="font-bold text-red-500">
+                    {project.cardsByStatus.blocked}
+                  </span>
+                </div>
+              </div>
             </div>
-          </div>
+          ))}
         </div>
-
-        {/* Board Area */}
-        <div className="flex-1 overflow-x-auto overflow-y-hidden px-8 pb-8">
-          <Board />
-        </div>
-      </main>
-      
-      <CreateTaskModal open={isCreateTaskOpen} onOpenChange={setIsCreateTaskOpen} />
+      </div>
     </div>
   );
 }
