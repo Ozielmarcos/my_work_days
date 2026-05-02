@@ -1,5 +1,18 @@
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useKanbanStore } from '../store/useKanbanStore';
+import { fileDatabase } from '../services/fileDatabase';
+import { exportService } from '../services/exportService';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export default function Dashboard() {
   const fetchInitialData = useKanbanStore((state) => state.fetchInitialData);
@@ -7,9 +20,40 @@ export default function Dashboard() {
   const stories = useKanbanStore((state) => state.stories);
   const tasks = useKanbanStore((state) => state.tasks);
 
+  // Rotation state
+  const [rotationNeeded, setRotationNeeded] = useState(false);
+  const [rotationReason, setRotationReason] = useState('');
+  const [email, setEmail] = useState('');
+  const [isRotating, setIsRotating] = useState(false);
+
   useEffect(() => {
     fetchInitialData();
+    checkRotation();
   }, [fetchInitialData]);
+
+  const checkRotation = async () => {
+    const result = await fileDatabase.checkRotationNeeded();
+    if (result.needed) {
+      setRotationNeeded(true);
+      setRotationReason(result.reason || '');
+    }
+  };
+
+  const handleRotation = async () => {
+    if (!email) return;
+    setIsRotating(true);
+    try {
+      await exportService.performRotation(email);
+      setRotationNeeded(false);
+      fetchInitialData(); // Refresh app
+      alert('Backup enviado e sistema resetado com sucesso!');
+    } catch (error) {
+      console.error('Erro na rotação:', error);
+      alert('Erro ao realizar backup dos dados.');
+    } finally {
+      setIsRotating(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -21,7 +65,7 @@ export default function Dashboard() {
 
   // Calculate stats
   const totalProjects = stories.length;
-  const mockTotalUsers = 12;
+  const mockTotalUsers = 1;
 
   // Metrics by project
   const projectMetrics = stories.map((story) => {
@@ -131,6 +175,39 @@ export default function Dashboard() {
           ))}
         </div>
       </div>
+      
+      {/* Rotation Dialog */}
+      <Dialog open={rotationNeeded} onOpenChange={setRotationNeeded}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Rotação de Dados Necessária</DialogTitle>
+            <DialogDescription>
+              {rotationReason}. Para continuar, precisamos exportar os dados atuais e resetar o sistema.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="email">E-mail para backup (CSV)</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="seu@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              onClick={handleRotation} 
+              disabled={!email || isRotating}
+              className="w-full"
+            >
+              {isRotating ? 'Processando...' : 'Exportar e Resetar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

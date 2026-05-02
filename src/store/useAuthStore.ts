@@ -3,24 +3,20 @@ import type { User } from '../types';
 
 interface AuthState {
   user: User | null;
-  login: (email: string) => void;
+  login: (user: User) => void;
   logout: () => void;
 }
 
+// Note: No localStorage persistence here as per requirements "NÃO usar localStorage"
+// However, for UX in a real app, session storage or a secure cookie might be used.
+// Here we keep it in memory (state).
+
 export const useAuthStore = create<AuthState>((set) => ({
-  user: JSON.parse(localStorage.getItem('kanban_user') || 'null'),
-  login: (email) => {
-    const fakeUser: User = {
-      id: 'u1',
-      name: email.split('@')[0],
-      email: email,
-      avatarUrl: 'https://i.pravatar.cc/150?u=a042581f4e29026024d',
-    };
-    localStorage.setItem('kanban_user', JSON.stringify(fakeUser));
-    set({ user: fakeUser });
+  user: null,
+  login: (user) => {
+    set({ user });
   },
   logout: () => {
-    localStorage.removeItem('kanban_user');
     set({ user: null });
   },
 }));

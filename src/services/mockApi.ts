@@ -1,97 +1,79 @@
-import type { Story, Task } from '../types';
-import { initialStories, initialTasks } from '../mock/initialData';
+import type { Story, Task, User } from '../types';
 import { v4 as uuidv4 } from 'uuid';
-
-const STORAGE_KEYS = {
-  STORIES: 'kanban_stories',
-  TASKS: 'kanban_tasks',
-};
-
-// Initialize localStorage with mock data if empty
-const initializeData = () => {
-  if (!localStorage.getItem(STORAGE_KEYS.STORIES)) {
-    localStorage.setItem(STORAGE_KEYS.STORIES, JSON.stringify(initialStories));
-  }
-
-  if (!localStorage.getItem(STORAGE_KEYS.TASKS)) {
-    localStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(initialTasks));
-  }
-};
-
-initializeData();
+import { fileDatabase } from './fileDatabase';
+import { fileHelpers } from '../utils/fileHelpers';
 
 export const mockApi = {
-  getStories: (): Promise<Story[]> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const stories = JSON.parse(localStorage.getItem(STORAGE_KEYS.STORIES) || '[]');
-        resolve(stories);
-      }, 300); // Simulate network delay
-    });
+  validateLogin: async (email: string, password: string): Promise<User | null> => {
+    const config = await fileHelpers.readJSON<{ users: (User & { password?: string })[] }>('auth.config.json');
+    if (!config) return null;
+
+    const user = config.users.find(u => u.email === email && u.password === password);
+    if (!user) return null;
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password: _, ...userWithoutPassword } = user;
+    return userWithoutPassword as User;
   },
 
-  getTasks: (): Promise<Task[]> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const tasks = JSON.parse(localStorage.getItem(STORAGE_KEYS.TASKS) || '[]');
-        resolve(tasks);
-      }, 300);
-    });
+  getStories: async (): Promise<Story[]> => {
+    await new Promise(r => setTimeout(r, 300));
+    const data = await fileDatabase.loadData();
+    return data.stories;
   },
 
-  createStory: (story: Omit<Story, 'id'>): Promise<Story> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const stories = JSON.parse(localStorage.getItem(STORAGE_KEYS.STORIES) || '[]');
-        const newStory: Story = { ...story, id: uuidv4() };
-        stories.push(newStory);
-        localStorage.setItem(STORAGE_KEYS.STORIES, JSON.stringify(stories));
-        resolve(newStory);
-      }, 300);
-    });
+  getTasks: async (): Promise<Task[]> => {
+    await new Promise(r => setTimeout(r, 300));
+    const data = await fileDatabase.loadData();
+    return data.tasks;
   },
 
-  createTask: (task: Omit<Task, 'id' | 'createdAt'>): Promise<Task> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const tasks = JSON.parse(localStorage.getItem(STORAGE_KEYS.TASKS) || '[]');
-        const newTask: Task = {
-          ...task,
-          id: uuidv4(),
-          createdAt: new Date().toISOString(),
-        };
-        tasks.push(newTask);
-        localStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(tasks));
-        resolve(newTask);
-      }, 300);
-    });
+  createStory: async (story: Omit<Story, 'id'>): Promise<Story> => {
+    await new Promise(r => setTimeout(r, 300));
+    const data = await fileDatabase.loadData();
+    const newStory: Story = { ...story, id: uuidv4() };
+    data.stories.push(newStory);
+    await fileDatabase.saveData(data);
+    return newStory;
   },
 
-  updateTask: (updatedTask: Task): Promise<Task> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const tasks: Task[] = JSON.parse(
-          localStorage.getItem(STORAGE_KEYS.TASKS) || '[]',
-        );
-        const index = tasks.findIndex((t) => t.id === updatedTask.id);
-
-        if (index > -1) {
-          tasks[index] = updatedTask;
-          localStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(tasks));
-        }
-        resolve(updatedTask);
-      }, 300);
-    });
+  createTask: async (task: Omit<Task, 'id' | 'createdAt'>): Promise<Task> => {
+    await new Promise(r => setTimeout(r, 300));
+    const data = await fileDatabase.loadData();
+    const newTask: Task = {
+      ...task,
+      id: uuidv4(),
+      createdAt: new Date().toISOString(),
+    };
+    data.tasks.push(newTask);
+    await fileDatabase.saveData(data);
+    return newTask;
   },
 
-  deleteTask: (taskId: string): Promise<void> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        let tasks: Task[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.TASKS) || '[]');
-        tasks = tasks.filter((t) => t.id !== taskId);
-        localStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(tasks));
-        resolve();
-      }, 300);
-    });
+  updateTask: async (updatedTask: Task): Promise<Task> => {
+    await new Promise(r => setTimeout(r, 300));
+    const data = await fileDatabase.loadData();
+    const index = data.tasks.findIndex((t) => t.id === updatedTask.id);
+
+    if (index > -1) {
+      data.tasks[index] = updatedTask;
+      await fileDatabase.saveData(data);
+    }
+    return updatedTask;
+  },
+
+  deleteTask: async (taskId: string): Promise<void> => {
+    await new Promise(r => setTimeout(r, 300));
+    const data = await fileDatabase.loadData();
+    data.tasks = data.tasks.filter((t) => t.id !== taskId);
+    await fileDatabase.saveData(data);
+  },
+
+  deleteStory: async (storyId: string): Promise<void> => {
+    await new Promise(r => setTimeout(r, 300));
+    const data = await fileDatabase.loadData();
+    data.stories = data.stories.filter((s) => s.id !== storyId);
+    data.tasks = data.tasks.filter((t) => t.storyId !== storyId);
+    await fileDatabase.saveData(data);
   },
 };
