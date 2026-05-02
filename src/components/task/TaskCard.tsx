@@ -2,8 +2,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { Task } from '../../types';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Play, Square } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Clock, Play, Square, Timer, Pause } from 'lucide-react';
 import { useKanbanStore } from '../../store/useKanbanStore';
 import { useEffect, useState } from 'react';
 
@@ -14,9 +13,10 @@ interface TaskCardProps {
 
 export function TaskCard({ task, onClick }: TaskCardProps) {
   const startTaskTimer = useKanbanStore((state) => state.startTaskTimer);
+  const pauseTaskTimer = useKanbanStore((state) => state.pauseTaskTimer);
   const stopTaskTimer = useKanbanStore((state) => state.stopTaskTimer);
 
-  const [elapsedMinutes, setElapsedMinutes] = useState(0);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } =
     useSortable({
@@ -33,12 +33,12 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
       const updateElapsed = () => {
         const start = new Date(task.currentTimerStart!).getTime();
         const now = new Date().getTime();
-        setElapsedMinutes(Math.floor((now - start) / 60000));
+        setElapsedSeconds((task.doingTime || 0) + Math.floor((now - start) / 1000));
       };
-      updateElapsed(); // initial call
-      interval = setInterval(updateElapsed, 60000); // update every minute
+      updateElapsed();
+      interval = setInterval(updateElapsed, 1000);
     } else {
-      setElapsedMinutes(0);
+      setElapsedSeconds(task.doingTime || 0);
     }
     return () => clearInterval(interval);
   }, [task.isTimerRunning, task.currentTimerStart]);
@@ -79,18 +79,36 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
   };
 
   const spentHours = task.spentHours || 0;
-  const activeHours = task.isTimerRunning ? elapsedMinutes / 60 : 0;
-  const totalSpent = spentHours + activeHours;
-  const remainingHours = Math.max(0, task.effort - totalSpent);
+  // Use static spentHours for remaining and total display as per user request
+  const totalSpentDisplay = spentHours;
+  const remainingHours = Math.max(0, task.effort - totalSpentDisplay);
 
-  const formatHours = (h: number) => h.toFixed(1).replace('.0', '');
+  const formatHours = (h: number) => {
+    if (h === 0) return '0';
+    return h.toFixed(2).replace(/\.?0+$/, '');
+  };
+
+  const formatTimer = (seconds: number) => {
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return [hrs, mins, secs]
+      .map(v => v < 10 ? "0" + v : v)
+      .filter((v, i) => v !== "00" || i > 0)
+      .join(":");
+  };
 
   const handleStartTimer = (e: React.MouseEvent) => {
     e.stopPropagation();
     startTaskTimer(task.id);
   };
 
-  const handleStopTimer = (e: React.MouseEvent) => {
+  const handlePauseTimer = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    pauseTaskTimer(task.id);
+  };
+
+  const handleStopSession = (e: React.MouseEvent) => {
     e.stopPropagation();
     stopTaskTimer(task.id);
   };
@@ -122,21 +140,39 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
         {task.status === 'in_progress' && (
           <div className="flex items-center gap-1 shrink-0">
             {task.isTimerRunning ? (
-              <button
-                onClick={handleStopTimer}
-                className="p-1.5 rounded-md bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"
-                title="Parar tempo"
-              >
-                <Square className="w-3.5 h-3.5 fill-current" />
-              </button>
+              <>
+                <button
+                  onClick={handlePauseTimer}
+                  className="p-1.5 rounded-md bg-orange-500/10 text-orange-500 hover:bg-orange-500/20 transition-colors"
+                  title="Pausar tempo"
+                >
+                  <Pause className="w-3.5 h-3.5 fill-current" />
+                </button>
+                <button
+                  onClick={handleStopSession}
+                  className="p-1.5 rounded-md bg-teal-500/10 text-teal-500 hover:bg-teal-500/20 transition-colors"
+                  title="Parar sessão"
+                >
+                  <Square className="w-3.5 h-3.5" />
+                </button>
+              </>
             ) : (
-              <button
-                onClick={handleStartTimer}
-                className="p-1.5 rounded-md bg-blue-500 text-slate-50 hover:bg-blue-500/60 transition-colors"
-                title="Iniciar tempo"
-              >
-                <Play className="w-3.5 h-3.5 fill-current" />
-              </button>
+              <>
+                <button
+                  onClick={handleStartTimer}
+                  className="p-1.5 rounded-md bg-blue-500 text-slate-50 hover:bg-blue-500/60 transition-colors"
+                  title="Iniciar tempo"
+                >
+                  <Play className="w-3.5 h-3.5 fill-current" />
+                </button>
+                <button
+                  onClick={handleStopSession}
+                  className="p-1.5 rounded-md bg-red-500 text-slate-50 hover:bg-red-500/60 transition-colors"
+                  title="Parar sessão"
+                >
+                  <Square className="w-3.5 h-3.5 fill-current"/>
+                </button>
+              </>
             )}
           </div>
         )}
@@ -147,12 +183,15 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
       )}
 
       <div className="flex items-center justify-between mt-auto pt-2">
-        <div className="flex -space-x-2">
-          {/* Mock avatars */}
-          <Avatar className="w-6 h-6 border-2 border-card">
-            <AvatarImage src={`https://i.pravatar.cc/150?u=${task.id}1`} />
-            <AvatarFallback>U</AvatarFallback>
-          </Avatar>
+        <div className="flex items-center gap-2">
+          {task.status === 'in_progress' && (task.isTimerRunning || (task.doingTime || 0) > 0) && (
+            <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md border ${task.isTimerRunning ? 'bg-primary/10 text-primary border-primary/20' : 'bg-muted/50 text-muted-foreground border-border'}`}>
+              <Timer className="w-3 h-3" />
+              <span className="text-[10px] font-mono font-bold">
+                {formatTimer(elapsedSeconds)}
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="flex flex-col items-end gap-1 text-xs">
@@ -160,9 +199,9 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
             <Clock className="w-3 h-3" />
             <span>{formatHours(remainingHours)}h rest</span>
           </div>
-          {totalSpent > 0 && (
-            <div className={`text-[10px] ${task.isTimerRunning ? 'text-primary animate-pulse' : 'text-muted-foreground'}`}>
-              {formatHours(totalSpent)}h gastas
+          {totalSpentDisplay > 0 && (
+            <div className="text-[10px] text-muted-foreground">
+              {formatHours(totalSpentDisplay)}h gastas
             </div>
           )}
         </div>

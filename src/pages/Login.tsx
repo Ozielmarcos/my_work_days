@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
+import { mockApi } from '../services/mockApi';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,14 +18,24 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
+  const [error, setError] = useState('');
   const login = useAuthStore((state) => state.login);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SubmitEvent) => {
     e.preventDefault();
+    setError('');
 
-    if (email && password) {
-      login(email);
-      navigate('/dashboard');
+    try {
+      const user = await mockApi.validateLogin(email, password);
+      if (user) {
+        login(user);
+        navigate('/dashboard');
+      } else {
+        setError('E-mail ou senha inválidos');
+      }
+    } catch (err) {
+      setError('Erro ao validar login');
+      console.error(err);
     }
   };
 
@@ -41,12 +52,17 @@ export default function Login() {
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
+            {error && (
+              <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive text-center font-medium">
+                {error}
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="email">E-mail</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="m@example.com"
+                placeholder="email@example.com"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -58,6 +74,7 @@ export default function Login() {
               <Input
                 id="password"
                 type="password"
+                placeholder='Digite sua senha'
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}

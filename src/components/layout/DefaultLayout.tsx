@@ -4,17 +4,16 @@ import {
   LayoutDashboard,
   FolderKanban,
   LogOut,
-  Bell,
-  Mail,
   Sun,
   Moon,
 } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+// import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useState, useEffect } from 'react';
 import { Button } from '../ui/button';
+import logo from '@/assets/favicon.png'
 
 export function DefaultLayout() {
-  const user = useAuthStore((state) => state.user);
+  // const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
   const location = useLocation();
   const [isDark, setIsDark] = useState(true);
@@ -38,14 +37,17 @@ export function DefaultLayout() {
     <div className="flex h-screen w-full bg-background overflow-hidden text-foreground">
       {/* Sidebar - Matching Image Aesthetic */}
       <aside className="w-[70px] shrink-0 border-r border-border bg-card flex flex-col items-center py-6 gap-6 z-10">
-        <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center text-primary font-bold text-sm tracking-tighter leading-none mb-4">
-          MWD
-        </div>
-
-        <Avatar className="w-10 h-10 border border-border">
+        {!logo ? 
+          <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center text-primary font-bold text-sm tracking-tighter leading-none mb-4">
+            MWD
+          </div> :
+          <img src={logo} alt='Logo My work days kanban' className='w-12 h-12 rounded-md' title='My Work Days'/>
+        }
+        {/* Implementar após usar backend */}
+        {/* <Avatar className="w-10 h-10 border border-border">
           <AvatarImage title={user?.name} src={user?.avatarUrl} />
           <AvatarFallback>{user?.name?.charAt(0).toUpperCase()}</AvatarFallback>
-        </Avatar>
+        </Avatar> */}
 
         <nav className="flex flex-col gap-4 mt-4 w-full px-3">
           <Link to="/dashboard" title="Dashboard">
@@ -77,7 +79,7 @@ export function DefaultLayout() {
       <main className="flex-1 flex flex-col min-w-0 bg-background overflow-hidden">
         {/* Top Navbar */}
         <header className="h-[70px] border-b border-border bg-card/40 backdrop-blur-md flex items-center justify-between px-8 shrink-0">
-          <div className="flex gap-8 text-sm font-medium">
+          <div className="flex gap-8 text-3xl font-bold">
             <h1 className="text-primary">{getPageTitle()}</h1>
           </div>
           <div className="flex items-center gap-6 text-muted-foreground">
@@ -93,8 +95,8 @@ export function DefaultLayout() {
                 <Sun className="w-5 h-5 cursor-pointer hover:text-foreground transition-colors" />
               )}
             </Button>
-            <Mail className="w-5 h-5 cursor-pointer hover:text-foreground transition-colors" />
-            <Bell className="w-5 h-5 cursor-pointer hover:text-foreground transition-colors" />
+            {/* <Mail className="w-5 h-5 cursor-pointer hover:text-foreground transition-colors" />
+            <Bell className="w-5 h-5 cursor-pointer hover:text-foreground transition-colors" /> */}
           </div>
         </header>
 
