@@ -7,7 +7,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, Trash, Download } from 'lucide-react';
+import { ExportModal } from '../export/ExportModal';
 import {
   Dialog,
   DialogContent,
@@ -25,8 +26,10 @@ export function StorySelector() {
   const activeStoryId = useKanbanStore((state) => state.activeStoryId);
   const setActiveStory = useKanbanStore((state) => state.setActiveStory);
   const addStory = useKanbanStore((state) => state.addStory);
+  const deleteStory = useKanbanStore((state) => state.deleteStory);
 
   const [isOpen, setIsOpen] = useState(false);
+  const [isExportOpen, setIsExportOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
 
@@ -36,6 +39,14 @@ export function StorySelector() {
       setTitle('');
       setDescription('');
       setIsOpen(false);
+    }
+  };
+
+  const handleDeleteStory = () => {
+    if (!activeStoryId) return;
+    const story = stories.find(s => s.id === activeStoryId);
+    if (story && window.confirm(`Deseja realmente excluir o projeto "${story.title}"? Todas as tarefas associadas serão removidas.`)) {
+      deleteStory(activeStoryId);
     }
   };
 
@@ -58,9 +69,9 @@ export function StorySelector() {
         <DialogTrigger asChild>
           <Button
             variant="outline"
-            className="py-2 px-5 bg-teal-400 rounded-full border-border hover:bg-accent text-accent-foreground"
+            className="py-2 px-5 bg-teal-500 hover:bg-teal-600 rounded-full border-none text-white font-medium transition-all shadow-sm"
           >
-            <Plus className="w-4 h-4" /> Novo Projeto
+            <Plus className="w-4 h-4 mr-2" /> Novo Projeto
           </Button>
         </DialogTrigger>
         <DialogContent className="bg-card border-border text-foreground sm:max-w-[425px]">
@@ -96,6 +107,31 @@ export function StorySelector() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {activeStoryId && (
+        <Button
+          onClick={handleDeleteStory}
+          variant="destructive"
+          title="Excluir projeto selecionado"
+          className="bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-lg p-2 transition-all border-none"
+        >
+          <Trash className="w-4 h-4" />
+        </Button>
+      )}
+
+      <Button
+        onClick={() => setIsExportOpen(true)}
+        variant="outline"
+        title="Exportar dados (CSV)"
+        className="bg-card/50 border-border text-muted-foreground hover:text-primary hover:border-primary/50 rounded-lg p-2 transition-all"
+      >
+        <Download className="w-4 h-4" />
+      </Button>
+
+      <ExportModal 
+        open={isExportOpen} 
+        onOpenChange={setIsExportOpen} 
+      />
     </div>
   );
 }

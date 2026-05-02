@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import type { TaskPriority, TaskStatus } from '../../types';
 
 interface CreateTaskModalProps {
@@ -36,7 +37,7 @@ export function CreateTaskModal({
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [effort, setEffort] = useState('1');
-  const [priority, setPriority] = useState<TaskPriority>('medium');
+  const [priority, setPriority] = useState<TaskPriority>('media');
   const [status, setStatus] = useState<TaskStatus>(defaultStatus);
 
   const handleSubmit = () => {
@@ -45,14 +46,14 @@ export function CreateTaskModal({
         storyId: activeStoryId,
         title,
         description,
-        effort: parseInt(effort) || 1,
+        effort: parseFloat(effort) || 0,
         priority,
         status,
       });
       setTitle('');
       setDescription('');
       setEffort('1');
-      setPriority('medium');
+      setPriority('media');
       onOpenChange(false);
     }
   };
@@ -61,32 +62,36 @@ export function CreateTaskModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="bg-card border-border text-foreground sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Create New Task</DialogTitle>
+          <DialogTitle>Nova Tarefa</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
-            <Label htmlFor="task-title">Title</Label>
+            <Label htmlFor="task-title">Título</Label>
             <Input
               id="task-title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="bg-background/50 border-border"
-              placeholder="What needs to be done?"
+              placeholder="O que precisa ser feito?"
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="task-desc">Description</Label>
-            <Input
+            <div className="flex justify-between items-center">
+              <Label htmlFor="task-desc">Descrição</Label>
+              <span className="text-[10px] text-muted-foreground">{description.length}/1000</span>
+            </div>
+            <Textarea
               id="task-desc"
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="bg-background/50 border-border"
-              placeholder="Task details..."
+              onChange={(e) => setDescription(e.target.value.slice(0, 1000))}
+              className="bg-background/50 border-border resize-none"
+              placeholder="Detalhes da tarefa..."
+              rows={4}
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
-              <Label>Status</Label>
+              <Label>Estatus</Label>
               <Select
                 value={status}
                 onValueChange={(val) => setStatus(val as TaskStatus)}
@@ -104,7 +109,7 @@ export function CreateTaskModal({
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label>Priority</Label>
+              <Label>Prioridade</Label>
               <Select
                 value={priority}
                 onValueChange={(val) => setPriority(val as TaskPriority)}
@@ -113,19 +118,20 @@ export function CreateTaskModal({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="low">Low</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="low">Baixa</SelectItem>
+                  <SelectItem value="medium">Media</SelectItem>
+                  <SelectItem value="high">Alta</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="effort">Effort (Hours)</Label>
+            <Label htmlFor="effort">Esforço Estimado (Horas)</Label>
             <Input
               id="effort"
               type="number"
-              min="1"
+              min="0"
+              step="0.1"
               value={effort}
               onChange={(e) => setEffort(e.target.value)}
               className="bg-background/50 border-border"
@@ -138,7 +144,7 @@ export function CreateTaskModal({
             onClick={handleSubmit}
             className="bg-primary hover:bg-primary/90 text-primary-foreground"
           >
-            Create Task
+            Criar
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -32,10 +32,14 @@ export function TimeEntriesView() {
     entry: TimeEntry;
   } | null>(null);
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
   useEffect(() => {
     const today = new Date().toISOString().split('T')[0];
     setDateFilter(today);
-  }, []);
+    setCurrentPage(1);
+  }, [dateFilter]);
 
   const entries = useMemo(() => {
     if (!activeStoryId) return [];
@@ -114,7 +118,7 @@ export function TimeEntriesView() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto p-8">
+      <div className="flex-1 overflow-auto p-8 pt-2">
         <div className="rounded-md border border-border bg-card">
           <Table>
             <TableHeader>
@@ -144,8 +148,11 @@ export function TimeEntriesView() {
                     Nenhum apontamento encontrado.
                   </TableCell>
                 </TableRow>
-              ) : (
-                entries.map((entry, index) => {
+              ) : (() => {
+                const startIndex = (currentPage - 1) * itemsPerPage;
+                const pagedEntries = entries.slice(startIndex, startIndex + itemsPerPage);
+
+                return pagedEntries.map((entry, index) => {
                   const startDate = new Date(entry.startTime);
                   const endDate = entry.endTime ? new Date(entry.endTime) : null;
                   return (
@@ -169,18 +176,59 @@ export function TimeEntriesView() {
                           size="icon"
                           onClick={() => setEditingEntry({ taskId: entry.taskId, entry })}
                           className="hover:bg-accent hover:text-accent-foreground"
-                          disabled={!entry.endTime} // Cannot edit a running timer
+                          disabled={!entry.endTime}
                         >
                           <Edit2 className="h-4 w-4" />
                         </Button>
                       </TableCell>
                     </TableRow>
                   );
-                })
-              )}
+                });
+              })()}
             </TableBody>
           </Table>
         </div>
+
+        {entries.length > itemsPerPage && (
+          <div className="flex items-center justify-between mt-4 bg-card border border-border p-2 rounded-md shadow-sm">
+            <div className="text-sm text-muted-foreground">
+              Exibindo <span className="font-medium text-foreground">{(currentPage - 1) * itemsPerPage + 1}</span> a <span className="font-medium text-foreground">{Math.min(currentPage * itemsPerPage, entries.length)}</span> de <span className="font-medium text-foreground">{entries.length}</span> registros
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(prev => prev - 1)}
+                className="h-8 border-border"
+              >
+                Anterior
+              </Button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: Math.ceil(entries.length / itemsPerPage) }, (_, i) => i + 1).map((page) => (
+                  <Button
+                    key={page}
+                    variant={currentPage === page ? "default" : "ghost"}
+                    size="icon"
+                    onClick={() => setCurrentPage(page)}
+                    className={`h-8 w-8 text-xs ${currentPage === page ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}
+                  >
+                    {page}
+                  </Button>
+                ))}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage === Math.ceil(entries.length / itemsPerPage)}
+                onClick={() => setCurrentPage(prev => prev + 1)}
+                className="h-8 border-border"
+              >
+                Próximo
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       <EditTimeEntryModal

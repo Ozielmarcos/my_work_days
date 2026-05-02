@@ -16,6 +16,7 @@ interface KanbanState {
   addTask: (task: Omit<Task, 'id' | 'createdAt'>) => Promise<void>;
   updateTask: (task: Task) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
+  deleteStory: (storyId: string) => Promise<void>;
   moveTask: (taskId: string, newStatus: TaskStatus) => Promise<void>;
 
   // Optimistic UI updates
@@ -23,6 +24,7 @@ interface KanbanState {
 
   // Timer actions
   startTaskTimer: (taskId: string) => Promise<void>;
+  pauseTaskTimer: (taskId: string) => Promise<void>;
   stopTaskTimer: (taskId: string) => Promise<void>;
   updateTimeEntry: (taskId: string, entryId: string, data: Partial<TimeEntry>) => Promise<void>;
   deleteTimeEntry: (taskId: string, entryId: string) => Promise<void>;
@@ -85,16 +87,34 @@ export const useKanbanStore = create<KanbanState>((set, get) => ({
     }));
   },
 
+  deleteStory: async (storyId) => {
+    await mockApi.deleteStory(storyId);
+    set((state) => {
+      const newStories = state.stories.filter((s) => s.id !== storyId);
+      const newActiveStoryId = state.activeStoryId === storyId 
+        ? (newStories.length > 0 ? newStories[0].id : null)
+        : state.activeStoryId;
+
+      return {
+        stories: newStories,
+        tasks: state.tasks.filter((t) => t.storyId !== storyId),
+        activeStoryId: newActiveStoryId,
+      };
+    });
+  },
+
   moveTask: async (taskId, newStatus) => {
-    // Backend update
     const task = get().tasks.find((t) => t.id === taskId);
 
     if (task) {
-      const updatedTask = { ...task, status: newStatus };
-      await mockApi.updateTask(updatedTask);
-      // Ensure state matches backend in case of conflict, though we did optimistic update
+      if (newStatus !== 'in_progress' && (task.isTimerRunning || (task.doingTime || 0) > 0)) {
+        await get().stopTaskTimer(taskId);
+      }
+      
+      const updatedTask = { ...get().tasks.find(t => t.id === taskId), status: newStatus };
+      await mockApi.updateTask(updatedTask as Task);
       set((state) => ({
-        tasks: state.tasks.map((t) => (t.id === taskId ? updatedTask : t)),
+        tasks: state.tasks.map((t) => (t.id === taskId ? updatedTask as Task : t)),
       }));
     }
   },
@@ -120,17 +140,48 @@ export const useKanbanStore = create<KanbanState>((set, get) => ({
     }
   },
 
-  stopTaskTimer: async (taskId) => {
+  pauseTaskTimer: async (taskId) => {
     const task = get().tasks.find((t) => t.id === taskId);
     if (task && task.isTimerRunning && task.currentTimerStart) {
       const now = new Date();
       const startTime = new Date(task.currentTimerStart);
       const diffMs = now.getTime() - startTime.getTime();
-      const diffHours = diffMs / (1000 * 60 * 60);
+      const diffSeconds = Math.floor(diffMs / 1000);
+
+      const updatedTask = {
+        ...task,
+        isTimerRunning: false,
+        currentTimerStart: undefined,
+        doingTime: (task.doingTime || 0) + diffSeconds,
+      };
+
+      await mockApi.updateTask(updatedTask);
+      set((state) => ({
+        tasks: state.tasks.map((t) => (t.id === taskId ? updatedTask : t)),
+      }));
+    }
+  },
+
+  stopTaskTimer: async (taskId) => {
+    const task = get().tasks.find((t) => t.id === taskId);
+    if (task && (task.isTimerRunning || (task.doingTime || 0) > 0)) {
+      let finalDoingTime = task.doingTime || 0;
+      let startTimeISO = task.currentTimerStart;
+
+      if (task.isTimerRunning && task.currentTimerStart) {
+        const now = new Date();
+        const startTime = new Date(task.currentTimerStart);
+        const diffMs = now.getTime() - startTime.getTime();
+        const diffSeconds = Math.floor(diffMs / 1000);
+        finalDoingTime += diffSeconds;
+      }
+
+      const now = new Date();
+      const diffHours = finalDoingTime / 3600;
 
       const newEntry: TimeEntry = {
         id: uuidv4(),
-        startTime: task.currentTimerStart,
+        startTime: startTimeISO || now.toISOString(),
         endTime: now.toISOString(),
         day: now.toISOString().split('T')[0],
       };
@@ -139,6 +190,7 @@ export const useKanbanStore = create<KanbanState>((set, get) => ({
         ...task,
         isTimerRunning: false,
         currentTimerStart: undefined,
+        doingTime: 0,
         spentHours: (task.spentHours || 0) + diffHours,
         timeEntries: [...(task.timeEntries || []), newEntry],
       };
