@@ -1,22 +1,25 @@
 import { create } from 'zustand';
-import type { User } from '../types';
-
 interface AuthState {
-  user: User | null;
-  login: (user: User) => void;
+  token: string | null;
+  refreshToken: string | null;
+  setTokens: (token: string, refreshToken: string) => void
+  /** Store login info (token and user) */
   logout: () => void;
 }
 
-// Note: No localStorage persistence here as per requirements "NÃO usar localStorage"
-// However, for UX in a real app, session storage or a secure cookie might be used.
-// Here we keep it in memory (state).
 
 export const useAuthStore = create<AuthState>((set) => ({
-  user: null,
-  login: (user) => {
-    set({ user });
+  token: localStorage.getItem("token"),
+  refreshToken: localStorage.getItem("refreshToken"),
+  setTokens: (token, refreshToken) => {
+    localStorage.setItem("token", token)
+    localStorage.setItem("refreshToken", refreshToken)
+    set({ token, refreshToken })
   },
   logout: () => {
-    set({ user: null });
+    localStorage.removeItem("token")
+    localStorage.removeItem("refreshToken")
+    set({ token: null, refreshToken: null });
   },
 }));
+

@@ -1,5 +1,4 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { useAuthStore } from '../../store/useAuthStore';
 import {
   LayoutDashboard,
   FolderKanban,
@@ -11,10 +10,10 @@ import {
 import { useState, useEffect } from 'react';
 import { Button } from '../ui/button';
 import logo from '@/assets/favicon.png'
+import { useAuthStore } from '@/store/useAuthStore'
 
 export function DefaultLayout() {
-  // const user = useAuthStore((state) => state.user);
-  const logout = useAuthStore((state) => state.logout);
+  const { logout } = useAuthStore()
   const location = useLocation();
   const [isDark, setIsDark] = useState(true);
 
@@ -37,11 +36,11 @@ export function DefaultLayout() {
     <div className="flex h-screen w-full bg-background overflow-hidden text-foreground">
       {/* Sidebar - Matching Image Aesthetic */}
       <aside className="w-[70px] shrink-0 border-r border-border bg-card flex flex-col items-center py-6 gap-6 z-10">
-        {!logo ? 
+        {!logo ?
           <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center text-primary font-bold text-sm tracking-tighter leading-none mb-4">
             MWD
           </div> :
-          <img src={logo} alt='Logo My work days kanban' className='w-12 h-12 rounded-md' title='My Work Days'/>
+          <img src={logo} alt='Logo My work days kanban' className='w-12 h-12 rounded-md' title='My Work Days' />
         }
         {/* Implementar após usar backend */}
         {/* <Avatar className="w-10 h-10 border border-border">

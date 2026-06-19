@@ -19,10 +19,13 @@ type FlattenedEntry = TimeEntry & {
   taskTitle: string;
 };
 
-export function TimeEntriesView() {
-  const tasks = useKanbanStore((state) => state.tasks);
-  const activeStoryId = useKanbanStore((state) => state.activeStoryId);
+interface ITimeEntriesViewProps {
+  storyId: string
+}
 
+export function TimeEntriesView({ storyId }: ITimeEntriesViewProps) {
+  const tasks = useKanbanStore((state) => state.tasks);
+  const activeStoryId = storyId;
   const [dateFilter, setDateFilter] = useState('');
   const [sortField, setSortField] = useState<'date' | 'time'>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
@@ -42,10 +45,9 @@ export function TimeEntriesView() {
   }, [dateFilter]);
 
   const entries = useMemo(() => {
-    if (!activeStoryId) return [];
 
     const storyTasks = tasks.filter((t) => t.storyId === activeStoryId);
-    
+
     let allEntries: FlattenedEntry[] = [];
     storyTasks.forEach((task) => {
       if (task.timeEntries && task.timeEntries.length > 0) {

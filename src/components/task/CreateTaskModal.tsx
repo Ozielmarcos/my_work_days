@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useKanbanStore } from '../../store/useKanbanStore';
 import {
   Dialog,
   DialogContent,
@@ -18,38 +17,42 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import type { TaskPriority, TaskStatus } from '../../types';
+import type { Task, TaskPriority, TaskStatus } from '../../types';
+import { KanbanService } from '@/services/kanbanService'
 
 interface CreateTaskModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   defaultStatus?: TaskStatus;
+  storyId: string | null;
+  setTasks: React.Dispatch<React.SetStateAction<Task[]>>
 }
 
 export function CreateTaskModal({
   open,
   onOpenChange,
   defaultStatus = 'todo',
+  storyId,
+  setTasks,
 }: CreateTaskModalProps) {
-  const addTask = useKanbanStore((state) => state.addTask);
-  const activeStoryId = useKanbanStore((state) => state.activeStoryId);
-
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [effort, setEffort] = useState('1');
   const [priority, setPriority] = useState<TaskPriority>('media');
   const [status, setStatus] = useState<TaskStatus>(defaultStatus);
 
-  const handleSubmit = () => {
-    if (title.trim() && activeStoryId) {
-      addTask({
-        storyId: activeStoryId,
+  const handleSubmit = async () => {
+    if (title.trim() && storyId) {
+      const newTask = await KanbanService.createTask({
+        storyId,
         title,
         description,
         effort: parseFloat(effort) || 0,
         priority,
         status,
       });
+
+      setTasks((prev) => [...prev, newTask])
       setTitle('');
       setDescription('');
       setEffort('1');
@@ -118,9 +121,9 @@ export function CreateTaskModal({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="low">Baixa</SelectItem>
-                  <SelectItem value="medium">Media</SelectItem>
-                  <SelectItem value="high">Alta</SelectItem>
+                  <SelectItem value="baixa">Baixa</SelectItem>
+                  <SelectItem value="media">Media</SelectItem>
+                  <SelectItem value="alta">Alta</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -140,7 +143,7 @@ export function CreateTaskModal({
         </div>
         <DialogFooter>
           <Button
-            disabled={!title.trim() || !activeStoryId}
+            disabled={!title.trim() || !storyId}
             onClick={handleSubmit}
             className="bg-primary hover:bg-primary/90 text-primary-foreground"
           >

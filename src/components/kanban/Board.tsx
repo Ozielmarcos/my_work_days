@@ -24,9 +24,12 @@ const COLUMNS: { id: TaskStatus; title: string }[] = [
   { id: 'blocked', title: 'Bloqueado' },
 ];
 
-export function Board() {
-  const tasks = useKanbanStore((state) => state.tasks);
-  const activeStoryId = useKanbanStore((state) => state.activeStoryId);
+interface IBoardProps {
+  storyId: string
+  tasks: Task[]
+}
+
+export function Board({ storyId, tasks }: IBoardProps) {
   const moveTask = useKanbanStore((state) => state.moveTask);
   const optimisticMoveTask = useKanbanStore((state) => state.optimisticMoveTask);
 
@@ -34,7 +37,10 @@ export function Board() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
 
-  const filteredTasks = tasks.filter((t) => t.storyId === activeStoryId);
+  let filteredTasks: Task[] = []
+  if (tasks && tasks.length > 0) {
+    filteredTasks = tasks.filter((t) => t.storyId === storyId);
+  }
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -128,14 +134,14 @@ export function Board() {
               key={col.id}
               status={col.id}
               title={col.title}
-              tasks={filteredTasks.filter((t) => t.status === col.id)}
+              tasks={filteredTasks?.filter((t) => t.status === col.id)}
               onTaskClick={handleTaskClick}
             />
           ))}
         </div>
 
         <DragOverlay>
-          {activeTask ? <TaskCard task={activeTask} onClick={() => {}} /> : null}
+          {activeTask ? <TaskCard task={activeTask} onClick={() => { }} /> : null}
         </DragOverlay>
       </DndContext>
 

@@ -78,7 +78,7 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
     } catch (error) {
       toast({
         title: "Erro na exportação",
-        description: "Não foi possível gerar o relatório. Tente novamente.",
+        description: `Não foi possível gerar o relatório. Tente novamente. Erro: ${error}`,
         variant: "destructive"
       });
     } finally {

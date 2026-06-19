@@ -16,7 +16,7 @@ function ThemeSetup({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  const user = useAuthStore((state) => state.user);
+  const user = useAuthStore((state) => state.token);
 
   return (
     <ThemeSetup>

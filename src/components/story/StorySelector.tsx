@@ -1,4 +1,3 @@
-import { useKanbanStore } from '../../store/useKanbanStore';
 import {
   Select,
   SelectContent,
@@ -20,22 +19,34 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useState } from 'react';
+import { KanbanService } from '@/services/kanbanService';
+import type { Story } from '@/types';
+import { useToast } from '@/hooks/use-toast';
 
-export function StorySelector() {
-  const stories = useKanbanStore((state) => state.stories);
-  const activeStoryId = useKanbanStore((state) => state.activeStoryId);
-  const setActiveStory = useKanbanStore((state) => state.setActiveStory);
-  const addStory = useKanbanStore((state) => state.addStory);
-  const deleteStory = useKanbanStore((state) => state.deleteStory);
+interface IStorySelectorProps {
+  stories: Story[]
+  setStories: React.Dispatch<React.SetStateAction<Story[]>>
+  activeStoryId: string | null
+  setActiveStoryId: (id: string) => void
+}
 
+export function StorySelector({
+  stories,
+  activeStoryId,
+  setActiveStoryId,
+  setStories }: IStorySelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const { toast } = useToast()
 
-  const handleCreateStory = () => {
+
+  const handleCreateStory = async () => {
     if (title.trim()) {
-      addStory({ title, description });
+      const newStory = await KanbanService.createStory({ title, description })
+      setStories(prev => [...prev, newStory])
+      setActiveStoryId(newStory.id)
       setTitle('');
       setDescription('');
       setIsOpen(false);
@@ -45,14 +56,33 @@ export function StorySelector() {
   const handleDeleteStory = () => {
     if (!activeStoryId) return;
     const story = stories.find(s => s.id === activeStoryId);
-    if (story && window.confirm(`Deseja realmente excluir o projeto "${story.title}"? Todas as tarefas associadas serão removidas.`)) {
-      deleteStory(activeStoryId);
+    if (story && window.confirm(
+      `Deseja realmente excluir o projeto "${story.title}"?` +
+      `Todas as tarefas associadas serão removidas.`)) {
+      try {
+        KanbanService.removeStory(activeStoryId);
+        const updateStoryList = stories.filter(s => s.id !== activeStoryId);
+        setStories(updateStoryList)
+
+        if (updateStoryList.length > 0) {
+          setActiveStoryId(updateStoryList[0].id)
+        } else {
+          setActiveStoryId(null)
+        }
+      } catch (err) {
+        toast({
+          title: "Erro ao excluir projeto",
+          description: "Tente novamente mais tarde",
+          variant: "destructive"
+        })
+      }
     }
   };
 
   return (
     <div className="items-center gap-3 inline-flex">
-      <Select value={activeStoryId || undefined} onValueChange={setActiveStory}>
+      <Select value={activeStoryId || undefined}
+        onValueChange={(value) => setActiveStoryId(value as string)}>
         <SelectTrigger className="w-[280px] bg-card/50 border-border h-8 text-sm">
           <SelectValue placeholder="Selecione um projeto..." />
         </SelectTrigger>
@@ -128,9 +158,9 @@ export function StorySelector() {
         <Download className="w-4 h-4" />
       </Button>
 
-      <ExportModal 
-        open={isExportOpen} 
-        onOpenChange={setIsExportOpen} 
+      <ExportModal
+        open={isExportOpen}
+        onOpenChange={setIsExportOpen}
       />
     </div>
   );

@@ -1,0 +1,18 @@
+- generic [ref=e2]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]: My Work Days
+      - generic [ref=e7]: Digite seu e-mail para entrar no seu workspace
+    - generic [ref=e8]:
+      - generic [ref=e9]:
+        - generic [ref=e10]:
+          - text: E-mail
+          - textbox "E-mail" [ref=e11]:
+            - /placeholder: email@example.com
+        - generic [ref=e12]:
+          - text: Senha
+          - textbox "Senha" [ref=e13]:
+            - /placeholder: Digite sua senha
+      - button "Entrar" [ref=e15] [cursor=pointer]
+  - region "Notifications (F8)":
+    - list

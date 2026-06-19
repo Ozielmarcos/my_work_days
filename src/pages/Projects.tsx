@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { useKanbanStore } from '../store/useKanbanStore';
 import { Board } from '../components/kanban/Board';
 import { StorySelector } from '../components/story/StorySelector';
 import { CreateTaskModal } from '../components/task/CreateTaskModal';
@@ -7,15 +6,37 @@ import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { TimeEntriesView } from '../components/time/TimeEntriesView';
+import { KanbanService } from '@/services/kanbanService';
+import type { Story, Task } from '@/types';
 
 export default function Projects() {
-  const fetchInitialData = useKanbanStore((state) => state.fetchInitialData);
-  const isLoading = useKanbanStore((state) => state.isLoading);
+  const [isLoading, setIsLoading] = useState(false)
+  const [activeStoryId, setActiveStoryId] = useState<string | null>(null);
+  const [stories, setStories] = useState<Story[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
 
   useEffect(() => {
-    fetchInitialData();
-  }, [fetchInitialData]);
+    (async () => {
+      try {
+        setIsLoading(true)
+        const allStories = await KanbanService.fetchInitialData()
+        const allTasks = await KanbanService.getStoryTasks()
+
+        setStories(allStories)
+        setTasks(allTasks)
+        console.log(allTasks)
+
+        if (allStories && allStories.length > 0) {
+          setActiveStoryId(allStories[0].id)
+        }
+      } catch (err) {
+        console.error("Erro ao buscar stories", err)
+      } finally {
+        setIsLoading(false)
+      }
+    })()
+  }, [])
 
   if (isLoading) {
     return (
@@ -32,7 +53,12 @@ export default function Projects() {
         <div className="px-8 py-6 flex flex-col gap-6 shrink-0">
           <div className="flex items-center text-sm text-muted-foreground">
             Projetos <span className="mx-2">›</span>
-            <StorySelector />
+            <StorySelector
+              stories={stories}
+              setStories={setStories}
+              activeStoryId={activeStoryId}
+              setActiveStoryId={setActiveStoryId}
+            />
           </div>
 
           <div className="flex items-center justify-between">
@@ -54,15 +80,19 @@ export default function Projects() {
 
         {/* Tab Contents */}
         <TabsContent value="board" className="flex-1 overflow-x-auto overflow-y-hidden px-8 pb-8 mt-0 border-none p-0 outline-none">
-          <Board />
+          <Board storyId={activeStoryId} tasks={tasks} />
         </TabsContent>
 
         <TabsContent value="time" className="flex-1 overflow-hidden px-0 pb-0 mt-0 border-none p-0 outline-none">
-          <TimeEntriesView />
+          <TimeEntriesView storyId={activeStoryId} />
         </TabsContent>
       </Tabs>
 
-      <CreateTaskModal open={isCreateTaskOpen} onOpenChange={setIsCreateTaskOpen} />
+      <CreateTaskModal
+        open={isCreateTaskOpen}
+        onOpenChange={setIsCreateTaskOpen}
+        storyId={activeStoryId}
+        setTasks={setTasks} />
     </div>
   );
 }

@@ -1,7 +1,5 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuthStore } from '../store/useAuthStore';
-import { mockApi } from '../services/mockApi';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,34 +11,36 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { useLogin } from '@/hooks/useLogin';
+
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
-  const [error, setError] = useState('');
-  const login = useAuthStore((state) => state.login);
+  const { doLogin, loading, error, user } = useLogin();
 
-  const handleSubmit = async (e: React.SubmitEvent) => {
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setError('');
-
     try {
-      const user = await mockApi.validateLogin(email, password);
-      if (user) {
-        login(user);
+      const result = await doLogin(email, password);
+      console.log('Resultado: ', result)
+      if (result?.token) {
         navigate('/dashboard');
-      } else {
-        setError('E-mail ou senha inválidos');
       }
     } catch (err) {
-      setError('Erro ao validar login');
       console.error(err);
     }
   };
 
   return (
     <div className="flex h-screen w-screen items-center justify-center bg-background">
+      {loading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-primary"></div>
+        </div>
+      )}
       <Card className="w-full max-w-sm border-none bg-card/50 shadow-2xl backdrop-blur-sm">
         <CardHeader className="space-y-1 text-center">
           <CardTitle className="text-3xl font-bold tracking-tight text-white">
