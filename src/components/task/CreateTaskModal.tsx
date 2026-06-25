@@ -44,7 +44,7 @@ export function CreateTaskModal({
   const handleSubmit = async () => {
     if (title.trim() && storyId) {
       const newTask = await KanbanService.createTask({
-        storyId,
+        story_id: storyId,
         title,
         description,
         effort: parseFloat(effort) || 0,
@@ -52,7 +52,10 @@ export function CreateTaskModal({
         status,
       });
 
-      setTasks((prev) => [...prev, newTask])
+      setTasks((prev) => {
+        const tasks = Array.isArray(prev) ? prev : []
+        return [...tasks, newTask]
+      })
       setTitle('');
       setDescription('');
       setEffort('1');

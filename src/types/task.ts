@@ -16,7 +16,7 @@ export interface TimeEntry {
 
 export type Task = {
     id?: string;
-    storyId: string;
+    story_id: string;
     title: string;
     description: string;
     effort: number; // in hours

@@ -45,6 +45,7 @@ export function StorySelector({
   const handleCreateStory = async () => {
     if (title.trim()) {
       const newStory = await KanbanService.createStory({ title, description })
+
       setStories(prev => [...prev, newStory])
       setActiveStoryId(newStory.id)
       setTitle('');
@@ -87,11 +88,17 @@ export function StorySelector({
           <SelectValue placeholder="Selecione um projeto..." />
         </SelectTrigger>
         <SelectContent className="bg-card border-border text-foreground">
-          {stories.map((story) => (
-            <SelectItem key={story.id} value={story.id}>
-              {story.title}
+          {stories.length == 0 ? (
+            <SelectItem value="none">
+              Nenhum projeto disponível
             </SelectItem>
-          ))}
+          ) : (
+            stories.map((story) => (
+              <SelectItem key={story.id} value={story.id}>
+                {story.title}
+              </SelectItem>
+            ))
+          )}
         </SelectContent>
       </Select>
 
@@ -138,16 +145,18 @@ export function StorySelector({
         </DialogContent>
       </Dialog>
 
-      {activeStoryId && (
-        <Button
-          onClick={handleDeleteStory}
-          variant="destructive"
-          title="Excluir projeto selecionado"
-          className="bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-lg p-2 transition-all border-none"
-        >
-          <Trash className="w-4 h-4" />
-        </Button>
-      )}
+      {
+        activeStoryId && (
+          <Button
+            onClick={handleDeleteStory}
+            variant="destructive"
+            title="Excluir projeto selecionado"
+            className="bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-lg p-2 transition-all border-none"
+          >
+            <Trash className="w-4 h-4" />
+          </Button>
+        )
+      }
 
       <Button
         onClick={() => setIsExportOpen(true)}
@@ -162,6 +171,6 @@ export function StorySelector({
         open={isExportOpen}
         onOpenChange={setIsExportOpen}
       />
-    </div>
+    </div >
   );
 }

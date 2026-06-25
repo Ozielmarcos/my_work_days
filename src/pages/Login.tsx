@@ -18,14 +18,14 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
-  const { doLogin, loading, error, user } = useLogin();
+  const { doLogin, loading, error } = useLogin();
 
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
       const result = await doLogin(email, password);
-      console.log('Resultado: ', result)
+
       if (result?.token) {
         navigate('/dashboard');
       }

@@ -21,15 +21,19 @@ export default function Projects() {
       try {
         setIsLoading(true)
         const allStories = await KanbanService.fetchInitialData()
-        const allTasks = await KanbanService.getStoryTasks()
-
         setStories(allStories)
-        setTasks(allTasks)
-        console.log(allTasks)
 
-        if (allStories && allStories.length > 0) {
-          setActiveStoryId(allStories[0].id)
+        if (allStories.length > 0) {
+          const firstStoryId = allStories[0].id
+
+          setActiveStoryId(firstStoryId)
+
+          const allTasks = await KanbanService.getStoryTasks(firstStoryId)
+          setTasks(allTasks)
+
+          console.log('Tarefas: ', allTasks)
         }
+
       } catch (err) {
         console.error("Erro ao buscar stories", err)
       } finally {
@@ -80,7 +84,7 @@ export default function Projects() {
 
         {/* Tab Contents */}
         <TabsContent value="board" className="flex-1 overflow-x-auto overflow-y-hidden px-8 pb-8 mt-0 border-none p-0 outline-none">
-          <Board storyId={activeStoryId} tasks={tasks} />
+          <Board storyId={activeStoryId} tasks={tasks} setTasks={setTasks} />
         </TabsContent>
 
         <TabsContent value="time" className="flex-1 overflow-hidden px-0 pb-0 mt-0 border-none p-0 outline-none">

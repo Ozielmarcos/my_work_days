@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 interface AuthState {
   token: string | null;
-  refreshToken: string | null;
-  setTokens: (token: string, refreshToken: string) => void
+  refresh_token: string | null;
+  setTokens: (token: string, refresh_token: string) => void
   /** Store login info (token and user) */
   logout: () => void;
 }
@@ -10,16 +10,18 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>((set) => ({
   token: localStorage.getItem("token"),
-  refreshToken: localStorage.getItem("refreshToken"),
-  setTokens: (token, refreshToken) => {
+  refresh_token: localStorage.getItem("refresh_token"),
+  setTokens: (token, refresh_token) => {
     localStorage.setItem("token", token)
-    localStorage.setItem("refreshToken", refreshToken)
-    set({ token, refreshToken })
+    localStorage.setItem("refresh_token", refresh_token)
+    set({ token, refresh_token })
   },
   logout: () => {
-    localStorage.removeItem("token")
-    localStorage.removeItem("refreshToken")
-    set({ token: null, refreshToken: null });
+    if (window.confirm('Tem certeza que deseja sair?')) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("refresh_token");
+      set({ token: null, refresh_token: null });
+    }
   },
 }));
 

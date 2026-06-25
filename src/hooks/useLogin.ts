@@ -17,7 +17,7 @@ export function useLogin() {
                 const data = await loginService(email, password);
                 setUser(data);
 
-                setTokens(data.token, data.refreshToken);
+                setTokens(data.token, data.refresh_token);
                 return data;
             } catch (err) {
                 setError(err as string);

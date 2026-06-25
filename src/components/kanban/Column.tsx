@@ -40,35 +40,32 @@ export function Column({ status, title, tasks, onTaskClick }: ColumnProps) {
     <div
       className={`flex flex-col w-[320px] shrink-0 bg-background/50 border border-border/50 rounded-2xl ${getStatusBorder(status)} overflow-hidden`}
     >
-      {tasks && tasks.length > 0 && (
-        <>
-          <div className="p-4 border-b border-border/50 flex items-center justify-between bg-card/30">
-            <h2 className="font-medium text-sm text-foreground flex items-center gap-2">
-              {title}
-              <span className="text-muted-foreground text-xs font-normal">
-                {tasks.length}
-              </span>
-            </h2>
-          </div>
+      <div className="p-4 border-b border-border/50 flex items-center justify-between bg-card/30">
+        <h2 className="font-medium text-sm text-foreground flex items-center gap-3">
+          {title}
+          <span className="text-muted-foreground text-xs font-normal">
+            {tasks.length}
+          </span>
+        </h2>
+      </div>
 
-          <div
-            ref={setNodeRef}
-            className={`flex-1 p-3 overflow-y-auto transition-colors ${isOver ? 'bg-accent/5' : ''
-              }`}
+      <div
+        ref={setNodeRef}
+        className={`flex-1 p-3 overflow-y-auto transition-colors ${isOver ? 'bg-accent/5' : ''}`}
+      >
+        {tasks && tasks.length > 0 && (
+          <SortableContext
+            items={tasks.map((t) => t.id)}
+            strategy={verticalListSortingStrategy}
           >
-            <SortableContext
-              items={tasks.map((t) => t.id)}
-              strategy={verticalListSortingStrategy}
-            >
-              <div className="flex flex-col gap-0 min-h-[150px]">
-                {tasks.map((task) => (
-                  <TaskCard key={task.id} task={task} onClick={() => onTaskClick(task)} />
-                ))}
-              </div>
-            </SortableContext>
-          </div>
-        </>
-      )}
+            <div className="flex flex-col gap-0 min-h-[150px]">
+              {tasks.map((task) => (
+                <TaskCard key={task.id} task={task} onClick={() => onTaskClick(task)} />
+              ))}
+            </div>
+          </SortableContext>
+        )}
+      </div>
     </div>
   );
 }

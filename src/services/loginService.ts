@@ -11,8 +11,6 @@ export const login = async (email: string, password: string): Promise<LoginRespo
     body: JSON.stringify({ email, password }),
   });
 
-  console.log('Fetch completed, status:', response.status);
-
   if (!response.ok) {
     let errMsg = 'Login failed';
     try {
@@ -28,6 +26,5 @@ export const login = async (email: string, password: string): Promise<LoginRespo
   }
 
   const data = (await response.json()) as LoginResponse;
-  console.log('Login succeeded, data:', data);
   return data;
 };

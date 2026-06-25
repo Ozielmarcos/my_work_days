@@ -1,6 +1,6 @@
 export interface LoginResponse {
     token: string
-    refreshToken: string
+    refresh_token: string
     user_id: string
 }
 

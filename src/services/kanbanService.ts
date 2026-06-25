@@ -35,7 +35,7 @@ export const KanbanService = {
         if (!response.ok) {
             throw new Error('Failed to create story');
         }
-        return response.json();
+        return response.json().then(res => res.data);
     },
 
     removeStory: async (id: string): Promise<void> => {
@@ -54,7 +54,7 @@ export const KanbanService = {
 
     createTask: async (data: Partial<Task>) => {
         const taskData = {
-            story_id: data.storyId,
+            story_id: data.story_id,
             title: data.title,
             description: data.description,
             status: data.status,
@@ -73,11 +73,11 @@ export const KanbanService = {
         if (!response.ok) {
             throw new Error('Failed to create task');
         }
-        return response.json();
+        return response.json().then(res => res.data);
     },
 
-    getStoryTasks: async () => {
-        const response = await fetch(`${apiUrl}/tasks`, {
+    getStoryTasks: async (story_id: string) => {
+        const response = await fetch(`${apiUrl}/stories/${story_id}/tasks`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -88,6 +88,24 @@ export const KanbanService = {
         if (!response.ok) {
             throw new Error('Failed to fetch tasks');
         }
+        const data = await response.json()
+        console.log('task data: ', data)
+        return data;
+    },
+
+    moveTask: async (task_id: string, status: string) => {
+        const response = await fetch(`${apiUrl}/task/${task_id}/status`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${getToken()}`,
+            },
+            body: JSON.stringify({ status }),
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to move task');
+        }
         return response.json();
-    }
+    },
 };
