@@ -1,5 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
-import { useKanbanStore } from '../../store/useKanbanStore';
+import { useState, useEffect } from 'react';
 import {
   Table,
   TableBody,
@@ -13,92 +12,74 @@ import { Button } from '@/components/ui/button';
 import { Edit2, ArrowUpDown } from 'lucide-react';
 import type { TimeEntry } from '../../types';
 import { EditTimeEntryModal } from './EditTimeEntryModal';
-
-type FlattenedEntry = TimeEntry & {
-  taskId: string;
-  taskTitle: string;
-};
+import { TimeEntriesService } from '@/services/TimeEntriesService';
+import { formatHours } from '@/utils/formatHours';
 
 interface ITimeEntriesViewProps {
   storyId: string
 }
 
 export function TimeEntriesView({ storyId }: ITimeEntriesViewProps) {
-  const tasks = useKanbanStore((state) => state.tasks);
-  const activeStoryId = storyId;
+  const [entries, setEntries] = useState([])
   const [dateFilter, setDateFilter] = useState('');
   const [sortField, setSortField] = useState<'date' | 'time'>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-
-  const [editingEntry, setEditingEntry] = useState<{
-    taskId: string;
-    entry: TimeEntry;
-  } | null>(null);
+  const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null);
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
   useEffect(() => {
-    const today = new Date().toISOString().split('T')[0];
-    setDateFilter(today);
+    if (!storyId) return;
+
+    const loadEntries = async () => {
+      try {
+        const response = await TimeEntriesService.entriesByStory(storyId);
+        setEntries(response);
+      } catch (err) {
+        console.error("Erro ao buscar apontamentos!", err);
+      }
+    };
+
+    loadEntries();
+
+    setDateFilter(new Date().toISOString().split("T")[0]);
     setCurrentPage(1);
-  }, [dateFilter]);
-
-  const entries = useMemo(() => {
-
-    const storyTasks = tasks.filter((t) => t.story_id === activeStoryId);
-
-    let allEntries: FlattenedEntry[] = [];
-    storyTasks.forEach((task) => {
-      if (task.timeEntries && task.timeEntries.length > 0) {
-        task.timeEntries.forEach((entry) => {
-          allEntries.push({
-            ...entry,
-            taskId: task.id,
-            taskTitle: task.title,
-          });
-        });
-      }
-    });
-
-    if (dateFilter) {
-      allEntries = allEntries.filter((e) => e.day === dateFilter);
-    }
-
-    allEntries.sort((a, b) => {
-      let comparison = 0;
-      if (sortField === 'date') {
-        comparison = new Date(a.day).getTime() - new Date(b.day).getTime();
-      } else if (sortField === 'time') {
-        const timeA = a.endTime ? new Date(a.endTime).getTime() - new Date(a.startTime).getTime() : 0;
-        const timeB = b.endTime ? new Date(b.endTime).getTime() - new Date(b.startTime).getTime() : 0;
-        comparison = timeA - timeB;
-      }
-      return sortOrder === 'asc' ? comparison : -comparison;
-    });
-
-    return allEntries;
-  }, [tasks, activeStoryId, dateFilter, sortField, sortOrder]);
+  }, [storyId]);
 
   const toggleSort = (field: 'date' | 'time') => {
     if (sortField === field) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
     } else {
       setSortField(field);
-      setSortOrder('desc');
+      setSortOrder('asc');
     }
   };
 
-  const calculateHours = (start: string, end?: string) => {
-    if (!end) return 'Rodando...';
-    const diffMs = new Date(end).getTime() - new Date(start).getTime();
-    const hours = diffMs / (1000 * 60 * 60);
-    return `${hours.toFixed(2)}h`;
+  const calculateHours = (startTime: string, endTime: string) => {
+    const start = new Date(startTime).getTime();
+    const end = new Date(endTime).getTime();
+
+    return formatHours(end - start);
   };
 
-  if (!activeStoryId) {
-    return <div className="p-8 text-muted-foreground text-center">Nenhum projeto selecionado.</div>;
-  }
+  const handleUpdateEntry = async (entry: TimeEntry) => {
+    try {
+      await TimeEntriesService.updateEntry(entry);
+      setEntries(entries.map((e) => e.id === entry.id ? entry : e));
+    } catch (err) {
+      console.error("Erro ao atualizar apontamento!", err);
+    }
+  };
+
+  const handleDeleteEntry = async (id: string) => {
+    try {
+      await TimeEntriesService.deleteEntry(id);
+      setEntries(entries.filter((entry) => entry.id !== id));
+    } catch (err) {
+      console.error("Erro ao deletar apontamento!", err);
+    }
+  };
 
   return (
     <div className="flex flex-col h-full bg-background">
@@ -113,7 +94,11 @@ export function TimeEntriesView({ storyId }: ITimeEntriesViewProps) {
             title="Filtrar por data"
           />
           {dateFilter && (
-            <Button variant="ghost" onClick={() => setDateFilter('')} className="text-muted-foreground">
+            <Button
+              variant="ghost"
+              onClick={() => setDateFilter('')}
+              className="text-muted-foreground"
+            >
               Limpar Filtro
             </Button>
           )}
@@ -127,7 +112,11 @@ export function TimeEntriesView({ storyId }: ITimeEntriesViewProps) {
               <TableRow className="border-border hover:bg-transparent">
                 <TableHead className="font-semibold text-foreground">Tarefa</TableHead>
                 <TableHead className="font-semibold text-foreground">
-                  <Button variant="ghost" onClick={() => toggleSort('date')} className="hover:bg-accent -ml-4">
+                  <Button
+                    variant="ghost"
+                    onClick={() => toggleSort('date')}
+                    className="hover:bg-accent -ml-4"
+                  >
                     Data
                     <ArrowUpDown className="ml-2 h-4 w-4" />
                   </Button>
@@ -135,12 +124,18 @@ export function TimeEntriesView({ storyId }: ITimeEntriesViewProps) {
                 <TableHead className="font-semibold text-foreground">Início</TableHead>
                 <TableHead className="font-semibold text-foreground">Fim</TableHead>
                 <TableHead className="font-semibold text-foreground text-right">
-                  <Button variant="ghost" onClick={() => toggleSort('time')} className="hover:bg-accent justify-end w-full">
+                  <Button
+                    variant="ghost"
+                    onClick={() => toggleSort('time')}
+                    className="hover:bg-accent justify-end w-full"
+                  >
                     Total
                     <ArrowUpDown className="ml-2 h-4 w-4" />
                   </Button>
                 </TableHead>
-                <TableHead className="text-right font-semibold text-foreground">Ações</TableHead>
+                <TableHead className="text-right font-semibold text-foreground">
+                  Ações
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -155,30 +150,38 @@ export function TimeEntriesView({ storyId }: ITimeEntriesViewProps) {
                 const pagedEntries = entries.slice(startIndex, startIndex + itemsPerPage);
 
                 return pagedEntries.map((entry, index) => {
-                  const startDate = new Date(entry.startTime);
-                  const endDate = entry.endTime ? new Date(entry.endTime) : null;
+                  const startDate = new Date(entry.start_time);
+                  const endDate = entry.end_time ? new Date(entry.end_time) : null;
                   return (
                     <TableRow key={index} className="border-border">
-                      <TableCell className="font-medium text-foreground">{entry.taskTitle}</TableCell>
+                      <TableCell
+                        title={entry.task_title}
+                        className="font-medium text-foreground" >
+                        {entry.task_title}
+                      </TableCell>
                       <TableCell className="text-muted-foreground">
                         {startDate.toLocaleDateString('pt-BR')}
                       </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {startDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                        {startDate.toLocaleTimeString('pt-BR',
+                          { hour: '2-digit', minute: '2-digit' }
+                        )}
                       </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {endDate ? endDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '-'}
+                        {endDate ? endDate.toLocaleTimeString('pt-BR',
+                          { hour: '2-digit', minute: '2-digit' }
+                        ) : '-'}
                       </TableCell>
-                      <TableCell className="text-right font-mono text-primary font-medium">
-                        {calculateHours(entry.startTime, entry.endTime)}
+                      <TableCell className="text-right pr-4 font-mono text-primary font-medium">
+                        {calculateHours(entry.start_time, entry.end_time)}
                       </TableCell>
                       <TableCell className="text-right">
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => setEditingEntry({ taskId: entry.taskId, entry })}
+                          onClick={() => setEditingEntry(entry)}
                           className="hover:bg-accent hover:text-accent-foreground"
-                          disabled={!entry.endTime}
+                          disabled={!entry.end_time}
                         >
                           <Edit2 className="h-4 w-4" />
                         </Button>
@@ -194,7 +197,19 @@ export function TimeEntriesView({ storyId }: ITimeEntriesViewProps) {
         {entries.length > itemsPerPage && (
           <div className="flex items-center justify-between mt-4 bg-card border border-border p-2 rounded-md shadow-sm">
             <div className="text-sm text-muted-foreground">
-              Exibindo <span className="font-medium text-foreground">{(currentPage - 1) * itemsPerPage + 1}</span> a <span className="font-medium text-foreground">{Math.min(currentPage * itemsPerPage, entries.length)}</span> de <span className="font-medium text-foreground">{entries.length}</span> registros
+              Exibindo
+              <span className="font-medium text-foreground">
+                {(currentPage - 1) * itemsPerPage + 1}
+              </span>
+              a
+              <span className="font-medium text-foreground">
+                {Math.min(currentPage * itemsPerPage, entries.length)}
+              </span>
+              de
+              <span className="font-medium text-foreground">
+                {entries.length}
+              </span>
+              registros
             </div>
             <div className="flex items-center gap-2">
               <Button
@@ -207,13 +222,21 @@ export function TimeEntriesView({ storyId }: ITimeEntriesViewProps) {
                 Anterior
               </Button>
               <div className="flex items-center gap-1">
-                {Array.from({ length: Math.ceil(entries.length / itemsPerPage) }, (_, i) => i + 1).map((page) => (
+                {Array.from({
+                  length: Math.ceil(entries.length / itemsPerPage)
+                },
+                  (_, i) => i + 1
+                ).map((page) => (
                   <Button
                     key={page}
                     variant={currentPage === page ? "default" : "ghost"}
                     size="icon"
                     onClick={() => setCurrentPage(page)}
-                    className={`h-8 w-8 text-xs ${currentPage === page ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}
+                    className={`h-8 w-8 text-xs 
+                      ${currentPage === page
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:bg-accent"}`
+                    }
                   >
                     {page}
                   </Button>
@@ -234,9 +257,10 @@ export function TimeEntriesView({ storyId }: ITimeEntriesViewProps) {
       </div>
 
       <EditTimeEntryModal
-        taskId={editingEntry?.taskId || null}
-        entry={editingEntry?.entry || null}
+        entry={editingEntry || null}
         open={!!editingEntry}
+        updateEntry={handleUpdateEntry}
+        removeEntry={handleDeleteEntry}
         onOpenChange={(open) => {
           if (!open) setEditingEntry(null);
         }}

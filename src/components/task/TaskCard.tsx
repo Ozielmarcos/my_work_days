@@ -187,7 +187,7 @@ export function TaskCard({
 
       <div className="flex items-center justify-between mt-auto pt-2">
         <div className="flex items-center gap-2">
-          {task.status === 'in_progress' && (task.isTimerRunning || (task.doingTime || 0) > 0) && (
+          {task.status === 'in_progress' && (task.isTimerRunning || (task.spentHours || 0) > 0) && (
             <div className={
               `flex items-center gap-1.5 px-2 py-1 rounded-md border ${task.isTimerRunning
                 ? 'bg-primary/10 text-primary border-primary/20'

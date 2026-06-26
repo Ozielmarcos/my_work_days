@@ -1,3 +1,5 @@
+import type { TimeEntry } from "./timeEntry";
+
 export type Story = {
     id?: string;
     title: string;
@@ -6,13 +8,6 @@ export type Story = {
 
 export type TaskStatus = 'todo' | 'in_progress' | 'review' | 'done' | 'blocked';
 export type TaskPriority = 'baixa' | 'media' | 'alta';
-
-export interface TimeEntry {
-    id: string; // UUID
-    startTime: string; // ISO string
-    endTime?: string; // ISO string
-    day: string; // YYYY-MM-DD
-}
 
 export type Task = {
     id?: string;

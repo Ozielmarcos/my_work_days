@@ -15,7 +15,7 @@ import { TaskCard } from '../task/TaskCard';
 import { TaskDetailModal } from '../task/TaskDetailModal';
 import type { Task, TaskStatus } from '../../types';
 import { KanbanService } from '@/services/kanbanService';
-import { TimeEntriesService } from '@/services/TimeEntries';
+import { TimeEntriesService } from '@/services/TimeEntriesService';
 
 const COLUMNS: { id: TaskStatus; title: string }[] = [
   { id: 'todo', title: 'À fazer' },

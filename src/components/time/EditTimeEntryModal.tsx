@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useKanbanStore } from '../../store/useKanbanStore';
 import {
   Dialog,
   DialogContent,
@@ -14,15 +13,20 @@ import type { TimeEntry } from '../../types';
 import { Trash2 } from 'lucide-react';
 
 interface EditTimeEntryModalProps {
-  taskId: string | null;
   entry: TimeEntry | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  updateEntry: (entry: TimeEntry) => void;
+  removeEntry: (id: string) => void;
 }
 
-export function EditTimeEntryModal({ taskId, entry, open, onOpenChange }: EditTimeEntryModalProps) {
-  const updateTimeEntry = useKanbanStore((state) => state.updateTimeEntry);
-  const deleteTimeEntry = useKanbanStore((state) => state.deleteTimeEntry);
+export function EditTimeEntryModal({
+  entry,
+  open,
+  onOpenChange,
+  updateEntry,
+  removeEntry
+}: EditTimeEntryModalProps) {
 
   const [date, setDate] = useState('');
   const [startTime, setStartTime] = useState('');
@@ -33,7 +37,7 @@ export function EditTimeEntryModal({ taskId, entry, open, onOpenChange }: EditTi
       setDate(entry.day);
       const start = new Date(entry.startTime);
       setStartTime(start.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
-      
+
       if (entry.endTime) {
         const end = new Date(entry.endTime);
         setEndTime(end.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
@@ -44,22 +48,25 @@ export function EditTimeEntryModal({ taskId, entry, open, onOpenChange }: EditTi
   }, [entry, open]);
 
   const handleSave = () => {
-    if (taskId && entry && date && startTime && endTime) {
+    if (entry && date && startTime && endTime) {
       const startDt = new Date(`${date}T${startTime}:00`);
       const endDt = new Date(`${date}T${endTime}:00`);
 
-      updateTimeEntry(taskId, entry.id, {
-        day: date,
+      const body = {
+        id: entry.id,
+        taskId: entry.taskId,
         startTime: startDt.toISOString(),
-        endTime: endDt.toISOString()
-      });
+        endTime: endDt.toISOString(),
+        day: date,
+      }
+      updateEntry(body);
       onOpenChange(false);
     }
   };
 
   const handleDelete = () => {
-    if (taskId && entry) {
-      deleteTimeEntry(taskId, entry.id);
+    if (entry) {
+      removeEntry(entry.id)
       onOpenChange(false);
     }
   };

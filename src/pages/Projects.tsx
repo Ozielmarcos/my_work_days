@@ -65,8 +65,18 @@ export default function Projects() {
 
           <div className="flex items-center justify-between">
             <TabsList className="bg-background/50 border border-border">
-              <TabsTrigger value="board" className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary">Kanban</TabsTrigger>
-              <TabsTrigger value="time" className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary">Apontamentos</TabsTrigger>
+              <TabsTrigger
+                value="board"
+                className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary"
+              >
+                Kanban
+              </TabsTrigger>
+              <TabsTrigger
+                value="time"
+                className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary"
+              >
+                Apontamentos
+              </TabsTrigger>
             </TabsList>
             <div className="flex items-center gap-4">
               <Button
