@@ -8,9 +8,20 @@ interface ColumnProps {
   title: string;
   tasks: Task[];
   onTaskClick: (task: Task) => void;
+  onStartTimer?: (taskId: string) => void;
+  onPauseTimer?: (taskId: string) => void;
+  onStopTimer?: (taskId: string) => void;
 }
 
-export function Column({ status, title, tasks, onTaskClick }: ColumnProps) {
+export function Column({
+  status,
+  title,
+  tasks,
+  onTaskClick,
+  onStartTimer,
+  onPauseTimer,
+  onStopTimer
+}: ColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: status,
     data: {
@@ -60,7 +71,14 @@ export function Column({ status, title, tasks, onTaskClick }: ColumnProps) {
           >
             <div className="flex flex-col gap-0 min-h-[150px]">
               {tasks.map((task) => (
-                <TaskCard key={task.id} task={task} onClick={() => onTaskClick(task)} />
+                <TaskCard
+                  key={task.id}
+                  task={task}
+                  onClick={() => onTaskClick(task)}
+                  onStartTimer={onStartTimer}
+                  onPauseTimer={onPauseTimer}
+                  onStopTimer={onStopTimer}
+                />
               ))}
             </div>
           </SortableContext>

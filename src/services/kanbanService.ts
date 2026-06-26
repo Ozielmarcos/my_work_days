@@ -89,7 +89,6 @@ export const KanbanService = {
             throw new Error('Failed to fetch tasks');
         }
         const data = await response.json()
-        console.log('task data: ', data)
         return data;
     },
 

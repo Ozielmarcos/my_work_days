@@ -46,7 +46,7 @@ export function TimeEntriesView({ storyId }: ITimeEntriesViewProps) {
 
   const entries = useMemo(() => {
 
-    const storyTasks = tasks.filter((t) => t.storyId === activeStoryId);
+    const storyTasks = tasks.filter((t) => t.story_id === activeStoryId);
 
     let allEntries: FlattenedEntry[] = [];
     storyTasks.forEach((task) => {

@@ -10,12 +10,12 @@ import {
 } from '@dnd-kit/core';
 import type { DragStartEvent, DragOverEvent, DragEndEvent } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
-import { useKanbanStore } from '../../store/useKanbanStore';
 import { Column } from './Column';
 import { TaskCard } from '../task/TaskCard';
 import { TaskDetailModal } from '../task/TaskDetailModal';
 import type { Task, TaskStatus } from '../../types';
 import { KanbanService } from '@/services/kanbanService';
+import { TimeEntriesService } from '@/services/TimeEntries';
 
 const COLUMNS: { id: TaskStatus; title: string }[] = [
   { id: 'todo', title: 'À fazer' },
@@ -137,6 +137,72 @@ export function Board({ storyId, tasks, setTasks }: IBoardProps) {
     setIsTaskModalOpen(true);
   };
 
+  const handleStartTimer = async (taskId: string) => {
+    await TimeEntriesService.starTimer(taskId)
+
+    setTasks(prev =>
+      prev.map((task) =>
+        task.id === taskId
+          ? {
+            ...task,
+            isTimerRunning: true,
+            currentTimerStart: new Date().toISOString(),
+            spentHours: task.spentHours
+          }
+          : task
+      )
+    )
+  };
+
+  const handlePauseTimer = async (taskId: string) => {
+    try {
+      if (activeTask?.isTimerRunning) {
+        await TimeEntriesService.pauseTimer(taskId)
+      } else {
+        await TimeEntriesService.resumeTimer(taskId)
+      }
+
+      setTasks(prev =>
+        prev.map((task) =>
+          task.id === taskId
+            ? {
+              ...task,
+              isTimerRunning: !task.isTimerRunning,
+              currentTimerStart: task.isTimerRunning ? null : new Date().toISOString(),
+              spentHours: task.spentHours
+            }
+            : task
+        )
+      )
+    } catch (err) {
+      console.error("Erro: ", err)
+    }
+  };
+
+  const handleStopTimer = async (taskId: string) => {
+    try {
+      await TimeEntriesService.pauseTimer(taskId)
+
+      setTasks(prev =>
+        prev.map((task) =>
+          task.id === taskId
+            ? {
+              ...task,
+              isTimerRunning: false,
+              currentTimerStart: null,
+              spentHours: task.spentHours
+            } : task
+        )
+      )
+    } catch (err) {
+      console.error("Erro: ", err)
+    }
+  };
+
+  function onTaskClick(task: Task): Task {
+    return task
+  }
+
   return (
     <>
       <DndContext
@@ -154,12 +220,22 @@ export function Board({ storyId, tasks, setTasks }: IBoardProps) {
               title={col.title}
               tasks={filteredTasks?.filter((t) => t.status === col.id)}
               onTaskClick={handleTaskClick}
+              onStartTimer={handleStartTimer}
+              onPauseTimer={handlePauseTimer}
+              onStopTimer={handleStopTimer}
             />
           ))}
         </div>
 
         <DragOverlay>
-          {activeTask ? <TaskCard task={activeTask} onClick={() => { }} /> : null}
+          {activeTask ?
+            <TaskCard
+              task={activeTask}
+              onClick={() => onTaskClick(activeTask)}
+              onStartTimer={handleStartTimer}
+              onPauseTimer={handlePauseTimer}
+              onStopTimer={handleStopTimer}
+            /> : null}
         </DragOverlay>
       </DndContext>
 

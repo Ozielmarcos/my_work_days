@@ -23,7 +23,6 @@ export type Task = {
     status: TaskStatus;
     priority: TaskPriority;
     createdAt?: string;
-    doingTime?: number;
     spentHours?: number;
     timeEntries?: TimeEntry[];
     isTimerRunning?: boolean;

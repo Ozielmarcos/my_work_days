@@ -30,8 +30,6 @@ export default function Projects() {
 
           const allTasks = await KanbanService.getStoryTasks(firstStoryId)
           setTasks(allTasks)
-
-          console.log('Tarefas: ', allTasks)
         }
 
       } catch (err) {

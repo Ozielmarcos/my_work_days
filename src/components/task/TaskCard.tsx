@@ -3,19 +3,23 @@ import { CSS } from '@dnd-kit/utilities';
 import type { Task } from '../../types';
 import { Badge } from '@/components/ui/badge';
 import { Clock, Play, Square, Timer, Pause } from 'lucide-react';
-import { useKanbanStore } from '../../store/useKanbanStore';
 import { useEffect, useState } from 'react';
 
 interface TaskCardProps {
   task: Task;
   onClick: () => void;
+  onStartTimer: (taskId: string) => void;
+  onPauseTimer: (taskId: string) => void;
+  onStopTimer: (taskId: string) => void;
 }
 
-export function TaskCard({ task, onClick }: TaskCardProps) {
-  const startTaskTimer = useKanbanStore((state) => state.startTaskTimer);
-  const pauseTaskTimer = useKanbanStore((state) => state.pauseTaskTimer);
-  const stopTaskTimer = useKanbanStore((state) => state.stopTaskTimer);
-
+export function TaskCard({
+  task,
+  onClick,
+  onStartTimer,
+  onPauseTimer,
+  onStopTimer,
+}: TaskCardProps) {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } =
@@ -33,12 +37,12 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
       const updateElapsed = () => {
         const start = new Date(task.currentTimerStart!).getTime();
         const now = new Date().getTime();
-        setElapsedSeconds((task.doingTime || 0) + Math.floor((now - start) / 1000));
+        setElapsedSeconds((task.spentHours || 0) + Math.floor((now - start) / 1000));
       };
       updateElapsed();
       interval = setInterval(updateElapsed, 1000);
     } else {
-      setElapsedSeconds(task.doingTime || 0);
+      setElapsedSeconds(task.spentHours || 0);
     }
     return () => clearInterval(interval);
   }, [task.isTimerRunning, task.currentTimerStart]);
@@ -79,7 +83,6 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
   };
 
   const spentHours = task.spentHours || 0;
-  // Use static spentHours for remaining and total display as per user request
   const totalSpentDisplay = spentHours;
   const remainingHours = Math.max(0, task.effort - totalSpentDisplay);
 
@@ -98,21 +101,6 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
       .join(":");
   };
 
-  const handleStartTimer = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    startTaskTimer(task.id);
-  };
-
-  const handlePauseTimer = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    pauseTaskTimer(task.id);
-  };
-
-  const handleStopSession = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    stopTaskTimer(task.id);
-  };
-
   if (isDragging) {
     return (
       <div
@@ -128,28 +116,35 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
       ref={setNodeRef}
       style={style}
       {...attributes}
-      {...listeners}
       onClick={onClick}
       className={`group relative bg-card border ${task.isTimerRunning ? 'border-primary' : 'border-border'} rounded-xl p-4 cursor-grab active:cursor-grabbing hover:border-primary/50 transition-colors shadow-sm mb-3 flex flex-col gap-3`}
     >
       <div className="flex justify-between items-start gap-2">
-        <h3 className="text-sm font-medium text-foreground leading-tight">
-          {task.title}
-        </h3>
-        
+        <div {...listeners} className='cursor-grab active:cursor-grabbing flex-1'>
+          <h3 className="text-sm font-medium text-foreground leading-tight">
+            {task.title}
+          </h3>
+        </div>
+
         {task.status === 'in_progress' && (
           <div className="flex items-center gap-1 shrink-0">
             {task.isTimerRunning ? (
               <>
                 <button
-                  onClick={handlePauseTimer}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onPauseTimer(task.id)
+                  }}
                   className="p-1.5 rounded-md bg-orange-500/10 text-orange-500 hover:bg-orange-500/20 transition-colors"
                   title="Pausar tempo"
                 >
                   <Pause className="w-3.5 h-3.5 fill-current" />
                 </button>
                 <button
-                  onClick={handleStopSession}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onStopTimer(task.id)
+                  }}
                   className="p-1.5 rounded-md bg-teal-500/10 text-teal-500 hover:bg-teal-500/20 transition-colors"
                   title="Parar sessão"
                 >
@@ -159,18 +154,26 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
             ) : (
               <>
                 <button
-                  onClick={handleStartTimer}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onStartTimer(task.id)
+                  }
+                  }
                   className="p-1.5 rounded-md bg-blue-500 text-slate-50 hover:bg-blue-500/60 transition-colors"
                   title="Iniciar tempo"
                 >
                   <Play className="w-3.5 h-3.5 fill-current" />
                 </button>
                 <button
-                  onClick={handleStopSession}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onStopTimer(task.id)
+                  }
+                  }
                   className="p-1.5 rounded-md bg-red-500 text-slate-50 hover:bg-red-500/60 transition-colors"
                   title="Parar sessão"
                 >
-                  <Square className="w-3.5 h-3.5 fill-current"/>
+                  <Square className="w-3.5 h-3.5 fill-current" />
                 </button>
               </>
             )}
@@ -185,7 +188,11 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
       <div className="flex items-center justify-between mt-auto pt-2">
         <div className="flex items-center gap-2">
           {task.status === 'in_progress' && (task.isTimerRunning || (task.doingTime || 0) > 0) && (
-            <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md border ${task.isTimerRunning ? 'bg-primary/10 text-primary border-primary/20' : 'bg-muted/50 text-muted-foreground border-border'}`}>
+            <div className={
+              `flex items-center gap-1.5 px-2 py-1 rounded-md border ${task.isTimerRunning
+                ? 'bg-primary/10 text-primary border-primary/20'
+                : 'bg-muted/50 text-muted-foreground border-border'}`
+            }>
               <Timer className="w-3 h-3" />
               <span className="text-[10px] font-mono font-bold">
                 {formatTimer(elapsedSeconds)}
